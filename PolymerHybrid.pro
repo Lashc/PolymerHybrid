@@ -26,10 +26,12 @@ CONFIG += c++11
 
 SOURCES += \
         main.cpp \
-        control.cpp
+        control.cpp \
+    menu.cpp
 
 HEADERS += \
-        control.h
+        control.h \
+    menu.h
 
 FORMS += \
         control.ui
@@ -38,3 +40,7 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES +=
+
+DISTFILES +=
