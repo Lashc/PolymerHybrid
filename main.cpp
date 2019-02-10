@@ -10,6 +10,6 @@ int main(int argc, char *argv[])
 
     Menu m;
     m.show();
-    m.resize(800, 600);
+    m.resize(1280, 800);
     return a.exec();
 }

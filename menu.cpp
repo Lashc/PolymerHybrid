@@ -11,19 +11,22 @@ Menu::Menu(QWidget *parent) : QWidget(parent)
     setStyleSheet(styleSheet);
 
     // Button properties
-    QSizePolicy btnPolicy(QSizePolicy::Minimum, QSizePolicy::Minimum, QSizePolicy::PushButton);
+    QSizePolicy btnPolicy(QSizePolicy::Minimum, QSizePolicy::Preferred, QSizePolicy::PushButton);
     QFont btnFont("Gotham", 25, QFont::Medium);
-    QSize btnSize(400, 200);
+    QSize maxBtnSize(400, 200);
+    QSize minBtnSize(150, 75);
 
     // Create the database and camera buttons
     databaseBtn = new QPushButton("&Database");
     databaseBtn->setFont(btnFont);
-    databaseBtn->setMaximumSize(btnSize);
+    databaseBtn->setMaximumSize(maxBtnSize);
+    databaseBtn->setMinimumSize(minBtnSize);
     databaseBtn->setSizePolicy(btnPolicy);
 
     cameraBtn = new QPushButton("&Camera");
     cameraBtn->setFont(btnFont);
-    cameraBtn->setMaximumSize(btnSize);
+    cameraBtn->setMaximumSize(maxBtnSize);
+    cameraBtn->setMinimumSize(minBtnSize);
     cameraBtn->setSizePolicy(btnPolicy);
 
     // Horizontal layout for buttons
@@ -34,7 +37,10 @@ Menu::Menu(QWidget *parent) : QWidget(parent)
 
     // Create the label at the top
     title = new QLabel("Polymer Hybrid Manufacturing");
+    title->setObjectName("title");
     title->setAlignment(Qt::AlignCenter);
+    title->setMinimumHeight(150);
+    title->setWordWrap(true);
     title->setFont(QFont("Futura", 50));
 
     // Create the banner at the bottom
@@ -45,6 +51,7 @@ Menu::Menu(QWidget *parent) : QWidget(parent)
     banner->setMaximumHeight(200);
     banner->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
     banner->setScaledContents(true);
+    banner->setMargin(10);
 
     // Create a grid layout and add the widgets and layout to it
     QGridLayout* grid = new QGridLayout(this);
