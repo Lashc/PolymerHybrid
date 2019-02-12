@@ -17,13 +17,13 @@ Menu::Menu(QWidget *parent) : QWidget(parent)
     QSize minBtnSize(150, 75);
 
     // Create the database and camera buttons
-    databaseBtn = new QPushButton("&Database");
+    databaseBtn = new QPushButton("Database");
     databaseBtn->setFont(btnFont);
     databaseBtn->setMaximumSize(maxBtnSize);
     databaseBtn->setMinimumSize(minBtnSize);
     databaseBtn->setSizePolicy(btnPolicy);
 
-    cameraBtn = new QPushButton("&Camera");
+    cameraBtn = new QPushButton("Camera");
     cameraBtn->setFont(btnFont);
     cameraBtn->setMaximumSize(maxBtnSize);
     cameraBtn->setMinimumSize(minBtnSize);
@@ -62,4 +62,17 @@ Menu::Menu(QWidget *parent) : QWidget(parent)
     grid->setHorizontalSpacing(20);
 
     setLayout(grid);
+
+    // Notify the stacked widget of a button click (and release)
+    connect(databaseBtn, SIGNAL(released()), this, SLOT(onDatabaseButtonClicked()));
+}
+
+Menu::~Menu()
+{
+
+}
+
+void Menu::onDatabaseButtonClicked()
+{
+    emit buttonClicked(1);
 }

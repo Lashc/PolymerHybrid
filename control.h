@@ -2,21 +2,17 @@
 #define CONTROL_H
 
 #include <QWidget>
-
-namespace Ui {
-class Control;
-}
+#include <QStackedWidget>
 
 class Control : public QWidget
 {
     Q_OBJECT
-
 public:
     explicit Control(QWidget *parent = nullptr);
     ~Control();
 
 private:
-    Ui::Control *ui;
+    QStackedWidget* pages;
 };
 
 #endif // CONTROL_H

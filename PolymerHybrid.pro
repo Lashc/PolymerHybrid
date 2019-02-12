@@ -27,11 +27,13 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         control.cpp \
-    menu.cpp
+    menu.cpp \
+    database.cpp
 
 HEADERS += \
         control.h \
-    menu.h
+    menu.h \
+    database.h
 
 FORMS += \
         control.ui

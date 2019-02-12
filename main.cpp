@@ -5,11 +5,9 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    /*Control w;
-    w.show();*/
-
-    Menu m;
-    m.show();
-    m.resize(1280, 800);
+    Control gui;
+    gui.show();
+    gui.setWindowTitle("Polymer Hybrid Manufacturing Data System");
+    gui.resize(1280, 800);
     return a.exec();
 }
