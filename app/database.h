@@ -2,7 +2,9 @@
 #define DATABASE_H
 
 #include <QWidget>
-#include <QLabel>
+#include <QTableView>
+#include <QSqlRelationalTableModel>
+#include <QSqlError>
 
 // Class for database menu
 class Database : public QWidget
@@ -13,7 +15,9 @@ public:
     ~Database();
 
 private:
-    QLabel* title; // Temporary widget to test with
+    QTableView* table;
+    QSqlRelationalTableModel* model;
+    QSqlError initDB();
 
 signals:
 
