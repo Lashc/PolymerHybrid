@@ -1,6 +1,6 @@
 #include "control.h"
 #include "menu.h"
-#include "database.h"
+#include "databaseMenu.h"
 #include <QVBoxLayout>
 
 Control::Control(QWidget *parent) : QWidget(parent)
@@ -8,7 +8,7 @@ Control::Control(QWidget *parent) : QWidget(parent)
     // Create and add pages to a stacked widget
     pages = new QStackedWidget;
     Menu* mainMenu = new Menu;
-    Database* databasePage = new Database;
+    DatabaseMenu* databasePage = new DatabaseMenu;
     pages->addWidget(mainMenu);
     pages->addWidget(databasePage);
 

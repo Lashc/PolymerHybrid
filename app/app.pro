@@ -28,12 +28,12 @@ SOURCES += \
         main.cpp \
         control.cpp \
     menu.cpp \
-    database.cpp
+    databaseMenu.cpp
 
 HEADERS += \
         control.h \
     menu.h \
-    database.h
+    databaseMenu.h
 
 FORMS += \
         control.ui
