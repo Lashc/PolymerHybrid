@@ -1,10 +1,18 @@
 #include "control.h"
 #include "menu.h"
 #include <QApplication>
+#include <QFile>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    // Set the stylesheet
+    QFile qssFile(":/menu_style.qss");
+    qssFile.open(QFile::ReadOnly);
+    QString styleSheet = QLatin1String(qssFile.readAll());
+    a.setStyleSheet(styleSheet);
+
     Control gui;
     gui.show();
     gui.setWindowTitle("Polymer Hybrid Manufacturing Data System");

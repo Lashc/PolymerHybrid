@@ -3,6 +3,9 @@
 #include <QFile>
 #include <QDebug>
 #include <QDir>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGroupBox>
 
 DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 {
@@ -13,9 +16,51 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
         qDebug() << "Database error: " << error;
     }
 
-    // Create the table view and SQL table model
+    // Table view and SQL table model
     table = new QTableView(this);
+    table->setMinimumWidth(400);
     model = new QSqlRelationalTableModel(this);
+
+    // Layouts
+    QHBoxLayout* layout = new QHBoxLayout;
+    QVBoxLayout* radioLayout = new QVBoxLayout;
+    QVBoxLayout* optionsLayout = new QVBoxLayout;
+
+    // Create radio buttons and add them to a layout
+    QFont radioFont("Futura", 15);
+    printBtn = new QRadioButton("Print parameters");
+    printBtn->setFont(radioFont);
+    printBtn->setChecked(1);
+    testBtn = new QRadioButton("Material testing");
+    testBtn->setFont(radioFont);
+    defectBtn = new QRadioButton("Print defects");
+    defectBtn->setFont(radioFont);
+    allBtn = new QRadioButton("All data");
+    allBtn->setFont(radioFont);
+    radioLayout->addWidget(printBtn);
+    radioLayout->addWidget(testBtn);
+    radioLayout->addWidget(defectBtn);
+    radioLayout->addWidget(allBtn);
+
+    // Group the radio buttons
+    QGroupBox* btnGroup = new QGroupBox("Select data:");
+    btnGroup->setFont(QFont("Futura", 25, QFont::Medium));
+    btnGroup->setMinimumSize(250, 200);
+    btnGroup->setLayout(radioLayout);
+    optionsLayout->addWidget(btnGroup, 4);
+
+    // Insert spacing and create push button for adding new record into database
+    optionsLayout->addStretch(3);
+    addBtn = new QPushButton("Add entry");
+    addBtn->setMinimumSize(200, 100);
+    addBtn->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred, QSizePolicy::PushButton));
+    addBtn->setFont(QFont("Gotham", 20, QFont::Medium));
+    optionsLayout->addWidget(addBtn, 2);
+
+    // Configure main layout
+    layout->addWidget(table, 5);
+    layout->addLayout(optionsLayout, 2);
+    setLayout(layout);
 
     // Testing database
     model->setTable("prints");

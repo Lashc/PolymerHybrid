@@ -4,6 +4,8 @@
 #include <QWidget>
 #include <QTableView>
 #include <QtSql>
+#include <QRadioButton>
+#include <QPushButton>
 
 // Class for database menu
 class DatabaseMenu : public QWidget
@@ -16,6 +18,11 @@ public:
 private:
     QSqlRelationalTableModel* model;
     QTableView* table;
+    QRadioButton* printBtn;
+    QRadioButton* testBtn;
+    QRadioButton* defectBtn;
+    QRadioButton* allBtn;
+    QPushButton* addBtn;
 
     QSqlError initDB();
     QSqlError createTables();

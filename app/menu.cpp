@@ -1,15 +1,8 @@
 #include "menu.h"
 #include <QGridLayout>
-#include <QFile>
 
 Menu::Menu(QWidget *parent) : QWidget(parent)
 {
-    // Set the stylesheet
-    QFile qssFile(":/menu_style.qss");
-    qssFile.open(QFile::ReadOnly);
-    QString styleSheet = QLatin1String(qssFile.readAll());
-    setStyleSheet(styleSheet);
-
     // Button properties
     QSizePolicy btnPolicy(QSizePolicy::Minimum, QSizePolicy::Preferred, QSizePolicy::PushButton);
     QFont btnFont("Gotham", 25, QFont::Medium);
