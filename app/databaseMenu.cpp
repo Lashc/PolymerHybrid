@@ -11,15 +11,23 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 {
     // Initialize the database
     QSqlError error = initDB();
-
     if (error.type() != QSqlError::NoError) {
         qDebug() << "Database error: " << error;
     }
 
-    // Table view and SQL table model
+    // Table view and SQL models
     table = new QTableView(this);
     table->setMinimumWidth(400);
     model = new QSqlRelationalTableModel(this);
+    joinModel = new QSqlQueryModel(this);
+    table->setModel(model);
+
+    // Configure foreign key references
+    model->setTable("material_tests");
+    model->setRelation(1, QSqlRelation("prints", "id", "print_id"));
+    model->setTable("defects");
+    model->setRelation(1, QSqlRelation("prints", "id", "print_id"));
+    model->setJoinMode(QSqlRelationalTableModel::LeftJoin);
 
     // Layouts
     QHBoxLayout* layout = new QHBoxLayout;
@@ -30,7 +38,6 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     QFont radioFont("Futura", 15);
     printBtn = new QRadioButton("Print parameters");
     printBtn->setFont(radioFont);
-    printBtn->setChecked(1);
     testBtn = new QRadioButton("Material testing");
     testBtn->setFont(radioFont);
     defectBtn = new QRadioButton("Print defects");
@@ -42,12 +49,18 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     radioLayout->addWidget(defectBtn);
     radioLayout->addWidget(allBtn);
 
-    // Group the radio buttons
-    QGroupBox* btnGroup = new QGroupBox("Select data:");
-    btnGroup->setFont(QFont("Futura", 25, QFont::Medium));
-    btnGroup->setMinimumSize(250, 200);
-    btnGroup->setLayout(radioLayout);
-    optionsLayout->addWidget(btnGroup, 4);
+    // Group the radio buttons and put them in a box
+    radioGroup = new QButtonGroup(this);
+    radioGroup->addButton(printBtn, 1);
+    radioGroup->addButton(testBtn, 2);
+    radioGroup->addButton(defectBtn, 3);
+    radioGroup->addButton(allBtn, 4);
+
+    QGroupBox* btnBox = new QGroupBox("Select data:");
+    btnBox->setFont(QFont("Futura", 25, QFont::Medium));
+    btnBox->setMinimumSize(250, 200);
+    btnBox->setLayout(radioLayout);
+    optionsLayout->addWidget(btnBox, 4);
 
     // Insert spacing and create push button for adding new record into database
     optionsLayout->addStretch(3);
@@ -62,10 +75,13 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     layout->addLayout(optionsLayout, 2);
     setLayout(layout);
 
-    // Testing database
+    // 'prints' table is default table selected
+    printBtn->setChecked(1);
     model->setTable("prints");
     model->select();
-    table->setModel(model);
+
+    // Connect signals and slots
+    connect(radioGroup, SIGNAL(buttonPressed(int)), this, SLOT(changeTable(int)));
 }
 
 QSqlError DatabaseMenu::initDB()
@@ -111,7 +127,8 @@ QSqlError DatabaseMenu::createTables()
     createTable.clear();
 
     // Material tests table
-    createTable << "CREATE TABLE material_tests (id INTEGER PRIMARY KEY,"
+    createTable << "CREATE TABLE material_tests ("
+                   "id INTEGER PRIMARY KEY,"
                    "print_id INTEGER,"
                    "coupon SMALLINT CHECK(coupon >= 1 AND coupon <=12),"
                    "ultimate_tensile REAL,"
@@ -125,7 +142,8 @@ QSqlError DatabaseMenu::createTables()
     createTable.clear();
 
     // Defects table
-    createTable << "CREATE TABLE defects (id INTEGER PRIMARY KEY,"
+    createTable << "CREATE TABLE defects ("
+                   "id INTEGER PRIMARY KEY,"
                    "print_id INTEGER,"
                    "description VARCHAR(1023) NOT NULL,"
                    "FOREIGN KEY(print_id) REFERENCES prints(id));";
@@ -134,9 +152,16 @@ QSqlError DatabaseMenu::createTables()
     createTable.str(std::string());
     createTable.clear();
 
-    // Test insertion into a table
-    if (!query.exec("INSERT INTO prints VALUES (NULL,\"2019-02-23\",\"Test\",1,\"00:00:01\","
-                    "200.5,\"01:00\",100,200,100,\"04:00:00\",\"thermal.avi\",\"visual.avi\");"))
+    // Test insertions into tables
+    if (!query.exec("INSERT INTO prints VALUES (NULL,\"2019-02-23\",\"Test 1\",1,\"00:00:01\","
+                    "200.5,\"01:00\",100,200,100,\"04:00:00\",\"thermal1.avi\",\"visual1.avi\");"))
+        return query.lastError();
+    if (!query.exec("INSERT INTO prints VALUES (NULL,\"2019-02-27\",\"Test 2\",2,\"00:00:01\","
+                     "50,\"01:00\",50,50,50,\"04:00:00\",\"thermal2.avi\",\"visual2.avi\");"))
+        return query.lastError();
+    if (!query.exec("INSERT INTO material_tests VALUES (NULL,1,2,100,200,300,400);"))
+        return query.lastError();
+    if (!query.exec("INSERT INTO defects VALUES (NULL,1,\"Test\");"))
         return query.lastError();
     return query.lastError();
 }
@@ -144,4 +169,24 @@ QSqlError DatabaseMenu::createTables()
 DatabaseMenu::~DatabaseMenu()
 {
 
+}
+
+void DatabaseMenu::changeTable(int id)
+{
+    // Select from all tables
+    if (id > 3) {
+        joinModel->setQuery("SELECT P.*, M.*, D.* FROM prints P "
+                    "LEFT JOIN material_tests M ON P.id=M.print_id "
+                    "LEFT JOIN defects D on M.print_id = D.print_id;");
+        table->setModel(joinModel);
+    }
+
+    // Select from one table
+    else {
+        table->setModel(model);
+        QString tableName;
+        tableName = id == 1 ? "prints" : id == 2 ? "material_tests" : "defects";
+        model->setTable(tableName);
+        model->select();
+    }
 }

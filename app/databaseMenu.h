@@ -6,6 +6,7 @@
 #include <QtSql>
 #include <QRadioButton>
 #include <QPushButton>
+#include <QButtonGroup>
 
 // Class for database menu
 class DatabaseMenu : public QWidget
@@ -17,7 +18,9 @@ public:
 
 private:
     QSqlRelationalTableModel* model;
+    QSqlQueryModel* joinModel;
     QTableView* table;
+    QButtonGroup* radioGroup;
     QRadioButton* printBtn;
     QRadioButton* testBtn;
     QRadioButton* defectBtn;
@@ -30,6 +33,7 @@ private:
 signals:
 
 public slots:
+    void changeTable(int);
 };
 
 #endif // DATABASEMENU_H

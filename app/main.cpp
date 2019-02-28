@@ -1,5 +1,4 @@
 #include "control.h"
-#include "menu.h"
 #include <QApplication>
 #include <QFile>
 
