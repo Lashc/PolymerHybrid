@@ -17,8 +17,7 @@ public:
     ~DatabaseMenu();
 
 private:
-    QSqlRelationalTableModel* model;
-    QSqlQueryModel* joinModel;
+    QSqlQueryModel* queryModel;
     QTableView* table;
     QButtonGroup* radioGroup;
     QRadioButton* printBtn;

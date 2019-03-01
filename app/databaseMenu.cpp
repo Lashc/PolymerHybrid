@@ -18,16 +18,8 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     // Table view and SQL models
     table = new QTableView(this);
     table->setMinimumWidth(400);
-    model = new QSqlRelationalTableModel(this);
-    joinModel = new QSqlQueryModel(this);
-    table->setModel(model);
-
-    // Configure foreign key references
-    model->setTable("material_tests");
-    model->setRelation(1, QSqlRelation("prints", "id", "print_id"));
-    model->setTable("defects");
-    model->setRelation(1, QSqlRelation("prints", "id", "print_id"));
-    model->setJoinMode(QSqlRelationalTableModel::LeftJoin);
+    queryModel = new QSqlQueryModel(this);
+    table->setModel(queryModel);
 
     // Layouts
     QHBoxLayout* layout = new QHBoxLayout;
@@ -38,7 +30,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     QFont radioFont("Futura", 15);
     printBtn = new QRadioButton("Print parameters");
     printBtn->setFont(radioFont);
-    testBtn = new QRadioButton("Material testing");
+    testBtn = new QRadioButton("Test results");
     testBtn->setFont(radioFont);
     defectBtn = new QRadioButton("Print defects");
     defectBtn->setFont(radioFont);
@@ -77,8 +69,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 
     // 'prints' table is default table selected
     printBtn->setChecked(1);
-    model->setTable("prints");
-    model->select();
+    changeTable(1);
 
     // Connect signals and slots
     connect(radioGroup, SIGNAL(buttonPressed(int)), this, SLOT(changeTable(int)));
@@ -107,8 +98,8 @@ QSqlError DatabaseMenu::createTables()
 
     // Form and execute queries for creating tables
     // Prints table
-    createTable << "CREATE TABLE prints"
-                   "(id INTEGER PRIMARY KEY,"
+    createTable << "CREATE TABLE prints ("
+                   "id INTEGER PRIMARY KEY,"
                    "date CHAR(10) NOT NULL,"
                    "description VARCHAR(255) NOT NULL,"
                    "experiment SMALLINT CHECK(experiment >= 0),"
@@ -126,8 +117,8 @@ QSqlError DatabaseMenu::createTables()
     createTable.str(std::string());
     createTable.clear();
 
-    // Material tests table
-    createTable << "CREATE TABLE material_tests ("
+    // Test results table
+    createTable << "CREATE TABLE tests ("
                    "id INTEGER PRIMARY KEY,"
                    "print_id INTEGER,"
                    "coupon SMALLINT CHECK(coupon >= 1 AND coupon <=12),"
@@ -159,7 +150,7 @@ QSqlError DatabaseMenu::createTables()
     if (!query.exec("INSERT INTO prints VALUES (NULL,\"2019-02-27\",\"Test 2\",2,\"00:00:01\","
                      "50,\"01:00\",50,50,50,\"04:00:00\",\"thermal2.avi\",\"visual2.avi\");"))
         return query.lastError();
-    if (!query.exec("INSERT INTO material_tests VALUES (NULL,1,2,100,200,300,400);"))
+    if (!query.exec("INSERT INTO tests VALUES (NULL,1,2,100,200,300,400);"))
         return query.lastError();
     if (!query.exec("INSERT INTO defects VALUES (NULL,1,\"Test\");"))
         return query.lastError();
@@ -173,20 +164,45 @@ DatabaseMenu::~DatabaseMenu()
 
 void DatabaseMenu::changeTable(int id)
 {
+    // List of nicer looking titles
+    QList<QString> columnTitles;
+
     // Select from all tables
     if (id > 3) {
-        joinModel->setQuery("SELECT P.*, M.*, D.* FROM prints P "
-                    "LEFT JOIN material_tests M ON P.id=M.print_id "
-                    "LEFT JOIN defects D on M.print_id = D.print_id;");
-        table->setModel(joinModel);
+        queryModel->setQuery("SELECT P.*, T.coupon, T.ultimate_tensile, T.yield, "
+                             "T.modulus_elasticity, T.percent_elongation, D.description "
+                             "FROM prints P "
+                             "LEFT JOIN tests T ON P.id=T.print_id "
+                             "LEFT JOIN defects D on T.print_id=D.print_id;");
+        columnTitles = { "Print ID", "Date", "Description", "Experiment", "Total time",
+                         "Nozzle temperature (°C)", "Layer time", "Feed rate",
+                         "Spindle speed", "Bed temperature (°C)", "Dryer time",
+                         "Thermal video", "Visual video", "Coupon", "Ultimate tensile strength",
+                         "Yield strength", "Modulus of elasticity", "Percent elongation",
+                         "Defect description" };
     }
 
     // Select from one table
     else {
-        table->setModel(model);
         QString tableName;
-        tableName = id == 1 ? "prints" : id == 2 ? "material_tests" : "defects";
-        model->setTable(tableName);
-        model->select();
+        tableName = id == 1 ? "prints" : id == 2 ? "tests" : "defects";
+        QString query("SELECT * FROM " + tableName + ";");
+        queryModel->setQuery(query);
+
+        if (tableName == "prints")
+            columnTitles = { "ID", "Date", "Description", "Experiment", "Total time",
+                             "Nozzle temperature (°C)", "Layer time", "Feed rate",
+                             "Spindle speed", "Bed temperature (°C)", "Dryer time",
+                             "Thermal video", "Visual video" };
+        else if (tableName == "tests")
+            columnTitles = { "ID", "Print ID", "Coupon", "Ultimate tensile strength",
+                             "Yield strength", "Modulus of elasticity", "Percent elongation" };
+        else if (tableName == "defects")
+            columnTitles = { "ID", "Print ID", "Description" };
     }
+
+    // Set the column titles
+    for (int i = 0; i < columnTitles.length(); i++)
+        queryModel->setHeaderData(i, Qt::Horizontal, columnTitles[i]);
+    table->resizeColumnsToContents();
 }
