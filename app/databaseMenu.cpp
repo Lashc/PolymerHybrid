@@ -7,6 +7,14 @@
 #include <QHBoxLayout>
 #include <QGroupBox>
 
+// Table IDs used for switching between tables
+enum TableID {
+    printID,
+    testID,
+    defectID,
+    allID
+};
+
 DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 {
     // Initialize the database
@@ -43,10 +51,10 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 
     // Group the radio buttons and put them in a box
     radioGroup = new QButtonGroup(this);
-    radioGroup->addButton(printBtn, 1);
-    radioGroup->addButton(testBtn, 2);
-    radioGroup->addButton(defectBtn, 3);
-    radioGroup->addButton(allBtn, 4);
+    radioGroup->addButton(printBtn, printID);
+    radioGroup->addButton(testBtn, testID);
+    radioGroup->addButton(defectBtn, defectID);
+    radioGroup->addButton(allBtn, allID);
 
     QGroupBox* btnBox = new QGroupBox("Select data:");
     btnBox->setFont(QFont("Futura", 25, QFont::Medium));
@@ -69,7 +77,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 
     // 'prints' table is default table selected
     printBtn->setChecked(1);
-    changeTable(1);
+    changeTable(printID);
 
     // Connect signals and slots
     connect(radioGroup, SIGNAL(buttonPressed(int)), this, SLOT(changeTable(int)));
@@ -93,23 +101,30 @@ QSqlError DatabaseMenu::initDB()
 
 QSqlError DatabaseMenu::createTables()
 {
+    // Form and execute queries for creating tables
     QSqlQuery query;
     std::stringstream createTable;
 
-    // Form and execute queries for creating tables
     // Prints table
     createTable << "CREATE TABLE prints ("
                    "id INTEGER PRIMARY KEY,"
                    "date CHAR(10) NOT NULL,"
                    "description VARCHAR(255) NOT NULL,"
                    "experiment SMALLINT CHECK(experiment >= 0),"
-                   "total_time CHAR(8),"
+                   "dry_time REAL CHECK(dry_time >= 0),"
+                   "setup_time REAL CHECK(setup_time >= 0),"
+                   "cycle_time REAL CHECK(cycle_time >= 0),"
+                   "shutdown_time REAL CHECK(shutdown_time >= 0),"
+                   "transition_time REAL CHECK(transition_time >= 0),"
                    "nozzle_temp REAL NOT NULL CHECK(nozzle_temp >= 0),"
-                   "layer_time CHAR(5),"
-                   "feed_rate REAL NOT NULL CHECK(feed_rate > 0),"
                    "spindle_speed REAL NOT NULL CHECK(spindle_speed > 0),"
+                   "feed_rate REAL NOT NULL CHECK(feed_rate > 0),"
                    "bed_temp REAL NOT NULL CHECK(bed_temp >= 0 AND bed_temp <= 232),"
-                   "dryer_time CHAR(8),"
+                   "dryer_temp REAL CHECK(dryer_temp >= 0),"
+                   "dryer_method VARCHAR(50),"
+                   "surface_finish VARCHAR(50),"
+                   "layer_time REAL,"
+                   "rapids INT,"
                    "thermal_video VARCHAR(255),"
                    "visual_video VARCHAR(255));";
     if (!query.exec(createTable.str().c_str()))
@@ -117,16 +132,30 @@ QSqlError DatabaseMenu::createTables()
     createTable.str(std::string());
     createTable.clear();
 
-    // Test results table
-    createTable << "CREATE TABLE tests ("
+    // Tolerances table
+    createTable << "CREATE TABLE tolerances ("
                    "id INTEGER PRIMARY KEY,"
                    "print_id INTEGER,"
-                   "coupon SMALLINT CHECK(coupon >= 1 AND coupon <=12),"
-                   "ultimate_tensile REAL,"
+                   "height REAL CHECK(height > 0),"
+                   "width REAL CHECK(width > 0),"
+                   "bead_width REAL CHECK(bead_width > 0),"
+                   "FOREIGN KEY(print_id) REFERENCES prints(id));";
+    if (!query.exec(createTable.str().c_str()))
+        return query.lastError();
+    createTable.str(std::string());
+    createTable.clear();
+
+    // Tensile tests table
+    createTable << "CREATE TABLE tensile ("
+                   "id INTEGER PRIMARY KEY,"
+                   "tolerance_id INTEGER,"
+                   "coupon SMALLINT CHECK(coupon >= 1 AND coupon <= 12),"
+                   "ultimate REAL,"
+                   "percent_elongation REAL,"
                    "yield REAL,"
                    "modulus_elasticity REAL,"
-                   "percent_elongation REAL,"
-                   "FOREIGN KEY(print_id) REFERENCES prints(id));";
+                   "cross_area REAL,"
+                   "FOREIGN KEY(tolerance_id) REFERENCES tolerances(id));";
     if (!query.exec(createTable.str().c_str()))
         return query.lastError();
     createTable.str(std::string());
@@ -144,14 +173,42 @@ QSqlError DatabaseMenu::createTables()
     createTable.clear();
 
     // Test insertions into tables
-    if (!query.exec("INSERT INTO prints VALUES (NULL,\"2019-02-23\",\"Test 1\",1,\"00:00:01\","
-                    "200.5,\"01:00\",100,200,100,\"04:00:00\",\"thermal1.avi\",\"visual1.avi\");"))
+    if (!query.exec("INSERT INTO prints VALUES (NULL,\"2019-02-23\",\"Test 1\",1,1.0,1.25,"
+                    "1.50,1.75,2.0,100,200,100,200,300,\"Hopper/dryer\",\"Yes\",30.0,40,"
+                    "\"thermal1.avi\",\"visual1.avi\");"))
         return query.lastError();
-    if (!query.exec("INSERT INTO prints VALUES (NULL,\"2019-02-27\",\"Test 2\",2,\"00:00:01\","
-                     "50,\"01:00\",50,50,50,\"04:00:00\",\"thermal2.avi\",\"visual2.avi\");"))
+    if (!query.exec("INSERT INTO prints VALUES (NULL,\"2019-02-27\",\"Test 2\",2,10.0,10.25,"
+                    "10.50,10.75,20.0,100,200,100,200,300,\"Hopper/dryer\",\"Yes\",30.0,40,"
+                    "\"thermal2.avi\",\"visual2.avi\");"))
         return query.lastError();
-    if (!query.exec("INSERT INTO tests VALUES (NULL,1,2,100,200,300,400);"))
+    if (!query.exec("INSERT INTO tolerances VALUES (NULL,1,20.0,20.0,1.0);"))
         return query.lastError();
+    if (!query.exec("INSERT INTO tolerances VALUES (NULL,2,10.0,10.0,1.0);"))
+        return query.lastError();
+    for (double i = 1.0; i <= 12.0; i++) {
+        QString q = "INSERT INTO tensile VALUES (NULL,1,";
+        q += QString::number(int(i)) + ",";
+        q += QString::number(i*100) + ",";
+        q += QString::number(i*100) + ",";
+        q += QString::number(i*100) + ",";
+        q += QString::number(i*100) + ",";
+        q += QString::number(i) + ");";
+        if (!query.exec(q))
+            return query.lastError();
+        q = "";
+    }
+    for (double i = 1.0; i <= 12.0; i++) {
+        QString q = "INSERT INTO tensile VALUES (NULL,2,";
+        q += QString::number(int(i)) + ",";
+        q += QString::number(i*1000) + ",";
+        q += QString::number(i*1000) + ",";
+        q += QString::number(i*1000) + ",";
+        q += QString::number(i*1000) + ",";
+        q += QString::number(i) + ");";
+        if (!query.exec(q))
+            return query.lastError();
+        q = "";
+    }
     if (!query.exec("INSERT INTO defects VALUES (NULL,1,\"Test\");"))
         return query.lastError();
     return query.lastError();
@@ -168,41 +225,64 @@ void DatabaseMenu::changeTable(int id)
     QList<QString> columnTitles;
 
     // Select from all tables
-    if (id > 3) {
-        queryModel->setQuery("SELECT P.*, T.coupon, T.ultimate_tensile, T.yield, "
-                             "T.modulus_elasticity, T.percent_elongation, D.description "
+    if (id == allID) {
+        queryModel->setQuery("SELECT P.*, T.height, T.width, T.bead_width,"
+                             "(SELECT GROUP_CONCAT(ultimate, \", \") FROM tensile WHERE tolerance_id = T.id),"
+                             "(SELECT GROUP_CONCAT(percent_elongation, \", \") FROM tensile WHERE tolerance_id = T.id),"
+                             "(SELECT GROUP_CONCAT(yield, \", \") FROM tensile WHERE tolerance_id = T.id),"
+                             "(SELECT GROUP_CONCAT(modulus_elasticity, \", \") FROM tensile WHERE tolerance_id = T.id),"
+                             "(SELECT GROUP_CONCAT(cross_area, \", \") FROM tensile WHERE tolerance_id = T.id),"
+                             "D.description "
                              "FROM prints P "
-                             "LEFT JOIN tests T ON P.id=T.print_id "
+                             "LEFT JOIN tolerances T ON P.id=T.print_id "
                              "LEFT JOIN defects D on T.print_id=D.print_id;");
-        columnTitles = { "Print ID", "Date", "Description", "Experiment", "Total time",
-                         "Nozzle temperature (°C)", "Layer time", "Feed rate",
-                         "Spindle speed", "Bed temperature (°C)", "Dryer time",
-                         "Thermal video", "Visual video", "Coupon", "Ultimate tensile strength",
-                         "Yield strength", "Modulus of elasticity", "Percent elongation",
+        columnTitles = { "Print ID", "Date", "Description", "Experiment", "Drying time",
+                         "Setup time", "Cycle time", "Shut down time", "Transition time",
+                         "Nozzle temperature (°C)", "Spindle speeed", "Feed rate",
+                         "Bed temperature (°C)", "Dryer temperature (°C)", "Dryer method",
+                         "Surface finish", "Layer time","Rapid %", "Thermal video", "Visual video",
+                         "Height", "Width", "Bead width", "Ultimate tensile strength (Coupons 1-12)",
+                         "Yield strength (Coupons 1-12)", "Modulus of elasticity (Coupons 1-12)",
+                         "Percent elongation (Coupons 1-12)", "Cross sectional area (Coupons 1-12)",
                          "Defect description" };
     }
 
-    // Select from one table
+    // Select from one table (or two for test results)
     else {
-        QString tableName;
-        tableName = id == 1 ? "prints" : id == 2 ? "tests" : "defects";
-        QString query("SELECT * FROM " + tableName + ";");
-        queryModel->setQuery(query);
+        QString query;
+        if (id  == printID) {
+            query = "SELECT * FROM prints;";
+            columnTitles = { "ID", "Date", "Description", "Experiment", "Drying time",
+                             "Setup time", "Cycle time", "Shut down time", "Transition time",
+                             "Nozzle temperature (°C)", "Spindle speeed", "Feed rate",
+                             "Bed temperature (°C)", "Dryer temperature (°C)", "Dryer method",
+                             "Surface finish", "Layer time","Rapid %", "Thermal video", "Visual video" };
+        }
 
-        if (tableName == "prints")
-            columnTitles = { "ID", "Date", "Description", "Experiment", "Total time",
-                             "Nozzle temperature (°C)", "Layer time", "Feed rate",
-                             "Spindle speed", "Bed temperature (°C)", "Dryer time",
-                             "Thermal video", "Visual video" };
-        else if (tableName == "tests")
-            columnTitles = { "ID", "Print ID", "Coupon", "Ultimate tensile strength",
-                             "Yield strength", "Modulus of elasticity", "Percent elongation" };
-        else if (tableName == "defects")
+        else if (id == testID) {
+            query = "SELECT T.*,"
+                    "(SELECT GROUP_CONCAT(ultimate, \", \") FROM tensile WHERE tolerance_id = T.id),"
+                    "(SELECT GROUP_CONCAT(percent_elongation, \", \") FROM tensile WHERE tolerance_id = T.id),"
+                    "(SELECT GROUP_CONCAT(yield, \", \") FROM tensile WHERE tolerance_id = T.id),"
+                    "(SELECT GROUP_CONCAT(modulus_elasticity, \", \") FROM tensile WHERE tolerance_id = T.id),"
+                    "(SELECT GROUP_CONCAT(cross_area, \", \") FROM tensile WHERE tolerance_id = T.id) "
+                    "FROM tolerances T";
+            columnTitles = { "ID", "Print ID", "Height", "Width", "Bead width",
+                             "Ultimate tensile strength (Coupons 1-12)", "Yield strength (Coupons 1-12)",
+                             "Modulus of elasticity (Coupons 1-12)", "Percent elongation (Coupons 1-12)",
+                             "Cross sectional area (Coupons 1-12)" };
+        }
+
+        else if (id == defectID) {
+            query = "SELECT * FROM defects;";
             columnTitles = { "ID", "Print ID", "Description" };
+        }
+        queryModel->setQuery(query);
     }
 
     // Set the column titles
     for (int i = 0; i < columnTitles.length(); i++)
         queryModel->setHeaderData(i, Qt::Horizontal, columnTitles[i]);
     table->resizeColumnsToContents();
+    table->resizeRowsToContents();
 }
