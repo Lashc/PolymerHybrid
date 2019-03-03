@@ -1,15 +1,30 @@
+/* All push buttons in the application */
 QPushButton {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 white, stop:1 rgb(188, 198, 204));
-    border-color: rgb(201, 21, 58); border-width: 2px; border-style: groove;
+    border: 2px groove rgb(201, 21, 58);
 }
 QPushButton:pressed {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgb(188, 198, 204), stop:1 white);
 }
 
+/* Title and banner on main menu (see "control.h") */
 QLabel#title {
     color: rgb(0, 35, 102);
 }
 QLabel#banner {
-    color: rgb(253, 208, 35); background-color: rgb(53, 13, 104);
-    border-color: rgb(253, 208, 35); border-width: 3px; border-style: solid; border-radius: 2px;
+    color: rgb(253, 208, 35);
+    background-color: rgb(53, 13, 104);
+    border: 3px solid rgb(253, 208, 35);
+    border-radius: 2px;
+}
+
+/* Table view header on database menu (see "databaseMenu.h") */
+QHeaderView::section {
+    background-color: gray;
+    color: white;
+    padding-left: 4px;
+    border: 1px solid rgb(200, 200, 200);
+}
+QHeaderView::section:checked {
+    background-color: rgb(201, 21, 58);
 }

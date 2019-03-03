@@ -6,6 +6,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGroupBox>
+#include <QHeaderView>
 
 // Table IDs used for switching between tables
 enum TableID {
@@ -24,10 +25,14 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     }
 
     // Table view and SQL models
+    QFont headerFont("Futura", 14);
     table = new QTableView(this);
     table->setMinimumWidth(400);
     queryModel = new QSqlQueryModel(this);
     table->setModel(queryModel);
+    table->setAlternatingRowColors(true);
+    table->horizontalHeader()->setFont(headerFont);
+    table->verticalHeader()->setFont(headerFont);
 
     // Layouts
     QHBoxLayout* layout = new QHBoxLayout;
@@ -227,23 +232,28 @@ void DatabaseMenu::changeTable(int id)
     // Select from all tables
     if (id == allID) {
         queryModel->setQuery("SELECT P.*, T.height, T.width, T.bead_width,"
-                             "(SELECT GROUP_CONCAT(ultimate, \", \") FROM tensile WHERE tolerance_id = T.id),"
-                             "(SELECT GROUP_CONCAT(percent_elongation, \", \") FROM tensile WHERE tolerance_id = T.id),"
-                             "(SELECT GROUP_CONCAT(yield, \", \") FROM tensile WHERE tolerance_id = T.id),"
-                             "(SELECT GROUP_CONCAT(modulus_elasticity, \", \") FROM tensile WHERE tolerance_id = T.id),"
-                             "(SELECT GROUP_CONCAT(cross_area, \", \") FROM tensile WHERE tolerance_id = T.id),"
+                             "(SELECT GROUP_CONCAT(ultimate, \", \") FROM "
+                                 "(SELECT TE.ultimate FROM tensile TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
+                             "(SELECT GROUP_CONCAT(percent_elongation, \", \") FROM "
+                                 "(SELECT TE.percent_elongation FROM tensile TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
+                             "(SELECT GROUP_CONCAT(yield, \", \") FROM "
+                                 "(SELECT TE.yield FROM tensile TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
+                             "(SELECT GROUP_CONCAT(modulus_elasticity, \", \") FROM "
+                                 "(SELECT TE.modulus_elasticity FROM tensile TE WHERE tolerance_id = T.id ORDER BY TE.coupon)),"
+                             "(SELECT GROUP_CONCAT(cross_area, \", \") FROM "
+                                 "(SELECT TE.cross_area FROM tensile TE WHERE tolerance_id = T.id ORDER BY TE.coupon)),"
                              "D.description "
                              "FROM prints P "
                              "LEFT JOIN tolerances T ON P.id=T.print_id "
                              "LEFT JOIN defects D on T.print_id=D.print_id;");
-        columnTitles = { "Print ID", "Date", "Description", "Experiment", "Drying time",
-                         "Setup time", "Cycle time", "Shut down time", "Transition time",
-                         "Nozzle temperature (°C)", "Spindle speeed", "Feed rate",
+        columnTitles = { "Print ID", "Date", "Description", "Experiment", "Drying time (hr)",
+                         "Setup time (min)", "Cycle time (hr)", "Shut down time (min)", "Transition time (hr)",
+                         "Nozzle temperature (°C)", "Spindle speeed (RPM)", "Feed rate (m/min)",
                          "Bed temperature (°C)", "Dryer temperature (°C)", "Dryer method",
-                         "Surface finish", "Layer time","Rapid %", "Thermal video", "Visual video",
-                         "Height", "Width", "Bead width", "Ultimate tensile strength (Coupons 1-12)",
-                         "Yield strength (Coupons 1-12)", "Modulus of elasticity (Coupons 1-12)",
-                         "Percent elongation (Coupons 1-12)", "Cross sectional area (Coupons 1-12)",
+                         "Surface finish", "Layer time (min)", "Rapid %", "Thermal video", "Visual video",
+                         "Height (mm)", "Width (mm)", "Bead width (mm)", "Ultimate tensile strength (MPa) (Coupons 1-12)",
+                         "Yield strength (MPa) (Coupons 1-12)", "Modulus of elasticity (GPa) (Coupons 1-12)",
+                         "Percent elongation (Coupons 1-12)", "Cross sectional area (mm^2) (Coupons 1-12)",
                          "Defect description" };
     }
 
@@ -252,25 +262,30 @@ void DatabaseMenu::changeTable(int id)
         QString query;
         if (id  == printID) {
             query = "SELECT * FROM prints;";
-            columnTitles = { "ID", "Date", "Description", "Experiment", "Drying time",
-                             "Setup time", "Cycle time", "Shut down time", "Transition time",
-                             "Nozzle temperature (°C)", "Spindle speeed", "Feed rate",
+            columnTitles = { "ID", "Date", "Description", "Experiment", "Drying time (hr)",
+                             "Setup time (min)", "Cycle time (hr)", "Shut down time (min)", "Transition time (hr)",
+                             "Nozzle temperature (°C)", "Spindle speeed (RPM)", "Feed rate (m/min)",
                              "Bed temperature (°C)", "Dryer temperature (°C)", "Dryer method",
-                             "Surface finish", "Layer time","Rapid %", "Thermal video", "Visual video" };
+                             "Surface finish", "Layer time (min)", "Rapid %", "Thermal video", "Visual video" };
         }
 
         else if (id == testID) {
             query = "SELECT T.*,"
-                    "(SELECT GROUP_CONCAT(ultimate, \", \") FROM tensile WHERE tolerance_id = T.id),"
-                    "(SELECT GROUP_CONCAT(percent_elongation, \", \") FROM tensile WHERE tolerance_id = T.id),"
-                    "(SELECT GROUP_CONCAT(yield, \", \") FROM tensile WHERE tolerance_id = T.id),"
-                    "(SELECT GROUP_CONCAT(modulus_elasticity, \", \") FROM tensile WHERE tolerance_id = T.id),"
-                    "(SELECT GROUP_CONCAT(cross_area, \", \") FROM tensile WHERE tolerance_id = T.id) "
-                    "FROM tolerances T";
-            columnTitles = { "ID", "Print ID", "Height", "Width", "Bead width",
-                             "Ultimate tensile strength (Coupons 1-12)", "Yield strength (Coupons 1-12)",
-                             "Modulus of elasticity (Coupons 1-12)", "Percent elongation (Coupons 1-12)",
-                             "Cross sectional area (Coupons 1-12)" };
+                    "(SELECT GROUP_CONCAT(ultimate, \", \") FROM "
+                        "(SELECT TE.ultimate FROM tensile TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
+                    "(SELECT GROUP_CONCAT(percent_elongation, \", \") FROM "
+                        "(SELECT TE.percent_elongation FROM tensile TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
+                    "(SELECT GROUP_CONCAT(yield, \", \") FROM "
+                        "(SELECT TE.yield FROM tensile TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
+                    "(SELECT GROUP_CONCAT(modulus_elasticity, \", \") FROM "
+                        "(SELECT TE.modulus_elasticity FROM tensile TE WHERE tolerance_id = T.id ORDER BY TE.coupon)),"
+                    "(SELECT GROUP_CONCAT(cross_area, \", \") FROM "
+                        "(SELECT TE.cross_area FROM tensile TE WHERE tolerance_id = T.id ORDER BY TE.coupon)) "
+                    "FROM tolerances T;";
+            columnTitles = { "ID", "Print ID", "Height (mm)", "Width (mm)", "Bead width (mm)",
+                             "Ultimate tensile strength (MPa) (Coupons 1-12)", "Yield strength (MPa) (Coupons 1-12)",
+                             "Modulus of elasticity (GPa) (Coupons 1-12)", "Percent elongation (Coupons 1-12)",
+                             "Cross sectional area (mm^2) (Coupons 1-12)" };
         }
 
         else if (id == defectID) {
