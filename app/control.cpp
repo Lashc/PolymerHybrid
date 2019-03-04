@@ -20,8 +20,3 @@ Control::Control(QWidget *parent) : QWidget(parent)
     layout->addWidget(pages);
     setLayout(layout);
 }
-
-Control::~Control()
-{
-
-}

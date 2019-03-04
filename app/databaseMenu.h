@@ -1,6 +1,7 @@
 #ifndef DATABASEMENU_H
 #define DATABASEMENU_H
 
+#include "printEntry.h"
 #include <QWidget>
 #include <QTableView>
 #include <QtSql>
@@ -25,6 +26,7 @@ private:
     QRadioButton* defectBtn;
     QRadioButton* allBtn;
     QPushButton* addBtn;
+    PrintEntry* printDialog;
 
     QSqlError initDB();
     QSqlError createTables();
@@ -33,6 +35,8 @@ signals:
 
 public slots:
     void changeTable(int);
+    void openDialog();
+    void addRecord();
 };
 
 #endif // DATABASEMENU_H

@@ -69,7 +69,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 
     // Insert spacing and create push button for adding new record into database
     optionsLayout->addStretch(3);
-    addBtn = new QPushButton("Add entry");
+    addBtn = new QPushButton("Add record");
     addBtn->setMinimumSize(200, 100);
     addBtn->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred, QSizePolicy::PushButton));
     addBtn->setFont(QFont("Gotham", 20, QFont::Medium));
@@ -86,6 +86,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 
     // Connect signals and slots
     connect(radioGroup, SIGNAL(buttonPressed(int)), this, SLOT(changeTable(int)));
+    connect(addBtn, SIGNAL(released()), this, SLOT(openDialog()));
 }
 
 QSqlError DatabaseMenu::initDB()
@@ -300,4 +301,18 @@ void DatabaseMenu::changeTable(int id)
         queryModel->setHeaderData(i, Qt::Horizontal, columnTitles[i]);
     table->resizeColumnsToContents();
     table->resizeRowsToContents();
+}
+
+void DatabaseMenu::openDialog()
+{
+    printDialog = new PrintEntry(this);
+    connect(printDialog, SIGNAL(accepted()), this, SLOT(addRecord()));
+    printDialog->open();
+}
+
+void DatabaseMenu::addRecord()
+{
+    QList<QString> data = printDialog->getData();
+    // Process data...
+    delete printDialog;
 }

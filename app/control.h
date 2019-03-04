@@ -9,7 +9,6 @@ class Control : public QWidget
     Q_OBJECT
 public:
     explicit Control(QWidget *parent = nullptr);
-    ~Control();
 
 private:
     QStackedWidget* pages;

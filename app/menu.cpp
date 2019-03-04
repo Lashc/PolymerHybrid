@@ -60,11 +60,6 @@ Menu::Menu(QWidget *parent) : QWidget(parent)
     connect(databaseBtn, SIGNAL(released()), this, SLOT(onDatabaseButtonClicked()));
 }
 
-Menu::~Menu()
-{
-
-}
-
 void Menu::onDatabaseButtonClicked()
 {
     emit buttonClicked(1);
