@@ -8,8 +8,8 @@
 #include <QGroupBox>
 #include <QHeaderView>
 
-// Table IDs used for switching between tables
-enum TableID {
+// Button IDs used for switching between tables
+enum ButtonID {
     printID,
     testID,
     defectID,
@@ -86,7 +86,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 
     // Connect signals and slots
     connect(radioGroup, SIGNAL(buttonPressed(int)), this, SLOT(changeTable(int)));
-    connect(addBtn, SIGNAL(released()), this, SLOT(openDialog()));
+    connect(addBtn, SIGNAL(released()), this, SLOT(openDataDialog()));
 }
 
 QSqlError DatabaseMenu::initDB()
@@ -303,16 +303,32 @@ void DatabaseMenu::changeTable(int id)
     table->resizeRowsToContents();
 }
 
-void DatabaseMenu::openDialog()
+void DatabaseMenu::openDataDialog()
 {
-    printDialog = new PrintEntry(this);
-    connect(printDialog, SIGNAL(accepted()), this, SLOT(addRecord()));
-    printDialog->open();
+    int id = radioGroup->checkedId();
+    switch(id) {
+    case printID:
+        recordDialog = new PrintEntry(this);
+        break;
+    case testID:
+        recordDialog = new PrintEntry(this); // Avoid crashing
+        // Create TestEntry
+        break;
+    case defectID:
+        recordDialog = new DefectEntry(this);
+        break;
+    case allID:
+        // Tell the user to select a particular set of data
+    default:
+        return;
+    };
+    connect(recordDialog, SIGNAL(accepted()), this, SLOT(addRecord()));
+    recordDialog->open();
 }
 
 void DatabaseMenu::addRecord()
 {
-    QList<QString> data = printDialog->getData();
+    QHash<QString, QString> data = recordDialog->getData();
     // Process data...
-    delete printDialog;
+    delete recordDialog;
 }

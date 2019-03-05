@@ -29,13 +29,17 @@ SOURCES += \
         control.cpp \
     menu.cpp \
     databaseMenu.cpp \
-    printEntry.cpp
+    printEntry.cpp \
+    dataEntry.cpp \
+    defectEntry.cpp
 
 HEADERS += \
         control.h \
     menu.h \
     databaseMenu.h \
-    printEntry.h
+    printEntry.h \
+    dataEntry.h \
+    defectEntry.h
 
 FORMS += \
         control.ui
