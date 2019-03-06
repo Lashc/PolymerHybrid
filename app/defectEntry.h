@@ -2,17 +2,20 @@
 #define DEFECTENTRY_H
 
 #include "dataEntry.h"
+#include <QLineEdit>
+#include <QTextEdit>
 
 // Dialog class for adding new defect entries to the 'defects' table of the database
 class DefectEntry : public DataEntry
 {
     Q_OBJECT
 public:
-    explicit DefectEntry(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+    explicit DefectEntry(QList<QString>, QList<QString>, QWidget* parent = nullptr);
+    virtual QHash<QString, QString> getData() const;
 
 private:
-    virtual QList<QString> createLabels();
-    virtual void setDBFields();
+    QLineEdit* printIDEdit;
+    QTextEdit* descEdit;
 };
 
 #endif // DEFECTENTRY_H

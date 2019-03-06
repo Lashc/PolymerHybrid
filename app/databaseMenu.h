@@ -1,8 +1,7 @@
 #ifndef DATABASEMENU_H
 #define DATABASEMENU_H
 
-#include "printEntry.h"
-#include "defectEntry.h"
+#include "dataEntry.h"
 #include <QWidget>
 #include <QTableView>
 #include <QtSql>

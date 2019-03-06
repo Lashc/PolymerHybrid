@@ -1,32 +1,27 @@
 #include "defectEntry.h"
+#include <QGridLayout>
 
-DefectEntry::DefectEntry(QWidget *parent, Qt::WindowFlags f) : DataEntry(parent, f)
+DefectEntry::DefectEntry(QList<QString> fields, QList<QString> labels, QWidget* parent)
+    : DataEntry(fields, labels, parent)
 {
-    // Set list of database table fields
-    setDBFields();
+    // Create labels, a line edit, and a text edit and add them to a grid layout
+    printIDEdit = new QLineEdit;
+    descEdit = new QTextEdit;
+    QGridLayout* lineEditLayout = new QGridLayout;
+    lineEditLayout->addWidget(new QLabel(labelTexts[0]), 0, 0);
+    lineEditLayout->addWidget(printIDEdit, 0, 1);
+    lineEditLayout->addWidget(new QLabel(labelTexts[1]), 1, 0);
+    lineEditLayout->addWidget(descEdit, 1, 1);
 
-    // Set labels
-    QList<QString> labels = createLabels();
-    for (int i = 0; i < labels.length(); i++) {
-        labelList.append(new QLabel(labels[i]));
-        lineEditList.append(new QLineEdit);
-    }
-
-    // Add the labels and line edits to the grid layout
-    QGridLayout* lineEditLayout = dynamic_cast<QGridLayout *>(layout()->itemAt(1));
-    for (int i = 0; i < labelList.length(); i++) {
-        lineEditLayout->addWidget(labelList[i], i / 2, (2 * i) % 4);
-        lineEditLayout->addWidget(lineEditList[i], i / 2, ((2 * i) + 1) % 4);
-    }
+    // Add the input layout to the main layout
+    QVBoxLayout* mainLayout = reinterpret_cast<QVBoxLayout*>(layout());
+    mainLayout->insertLayout(1, lineEditLayout);
 }
 
-QList<QString> DefectEntry::createLabels()
+QHash<QString, QString> DefectEntry::getData() const
 {
-    QList<QString> labels = { "Print ID", "Description" };
-    return labels;
-}
-
-void DefectEntry::setDBFields()
-{
-    dbFields = { "print_id", "description" };
+    QHash<QString, QString> data;
+    data.insert(dbFields[0], printIDEdit->text());
+    data.insert(dbFields[1], descEdit->toPlainText());
+    return data;
 }

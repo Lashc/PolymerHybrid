@@ -1,4 +1,5 @@
 #include "databaseMenu.h"
+#include "dataEntryFactory.h"
 #include <sstream>
 #include <QFile>
 #include <QDebug>
@@ -34,11 +35,6 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     table->horizontalHeader()->setFont(headerFont);
     table->verticalHeader()->setFont(headerFont);
 
-    // Layouts
-    QHBoxLayout* layout = new QHBoxLayout;
-    QVBoxLayout* radioLayout = new QVBoxLayout;
-    QVBoxLayout* optionsLayout = new QVBoxLayout;
-
     // Create radio buttons and add them to a layout
     QFont radioFont("Futura", 15);
     printBtn = new QRadioButton("Print parameters");
@@ -49,6 +45,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     defectBtn->setFont(radioFont);
     allBtn = new QRadioButton("All data");
     allBtn->setFont(radioFont);
+    QVBoxLayout* radioLayout = new QVBoxLayout;
     radioLayout->addWidget(printBtn);
     radioLayout->addWidget(testBtn);
     radioLayout->addWidget(defectBtn);
@@ -65,6 +62,9 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     btnBox->setFont(QFont("Futura", 25, QFont::Medium));
     btnBox->setMinimumSize(250, 200);
     btnBox->setLayout(radioLayout);
+
+    // Layout for selecting data and adding entries
+    QVBoxLayout* optionsLayout = new QVBoxLayout;
     optionsLayout->addWidget(btnBox, 4);
 
     // Insert spacing and create push button for adding new record into database
@@ -76,12 +76,13 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     optionsLayout->addWidget(addBtn, 2);
 
     // Configure main layout
+    QHBoxLayout* layout = new QHBoxLayout;
     layout->addWidget(table, 5);
     layout->addLayout(optionsLayout, 2);
     setLayout(layout);
 
     // 'prints' table is default table selected
-    printBtn->setChecked(1);
+    printBtn->setChecked(true);
     changeTable(printID);
 
     // Connect signals and slots
@@ -306,22 +307,11 @@ void DatabaseMenu::changeTable(int id)
 void DatabaseMenu::openDataDialog()
 {
     int id = radioGroup->checkedId();
-    switch(id) {
-    case printID:
-        recordDialog = new PrintEntry(this);
-        break;
-    case testID:
-        recordDialog = new PrintEntry(this); // Avoid crashing
-        // Create TestEntry
-        break;
-    case defectID:
-        recordDialog = new DefectEntry(this);
-        break;
-    case allID:
-        // Tell the user to select a particular set of data
-    default:
+    if (id == allID) {
+        // Tell user to select a specific data set
         return;
-    };
+    }
+    recordDialog = DataEntryFactory::createDataEntry(id, this);
     connect(recordDialog, SIGNAL(accepted()), this, SLOT(addRecord()));
     recordDialog->open();
 }

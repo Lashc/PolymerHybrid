@@ -31,7 +31,9 @@ SOURCES += \
     databaseMenu.cpp \
     printEntry.cpp \
     dataEntry.cpp \
-    defectEntry.cpp
+    defectEntry.cpp \
+    dataEntryFactory.cpp \
+    testEntry.cpp
 
 HEADERS += \
         control.h \
@@ -39,7 +41,9 @@ HEADERS += \
     databaseMenu.h \
     printEntry.h \
     dataEntry.h \
-    defectEntry.h
+    defectEntry.h \
+    dataEntryFactory.h \
+    testEntry.h
 
 FORMS += \
         control.ui
@@ -53,4 +57,6 @@ RESOURCES += \
     polymerhybrid.qrc
 
 DISTFILES += \
-    menu_style.qss
+    menu_style.qss \
+    database_fields.rtf \
+    database_labels.rtf

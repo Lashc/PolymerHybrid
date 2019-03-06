@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>menu_style.qss</file>
+        <file>database_fields.rtf</file>
+        <file>database_labels.rtf</file>
     </qresource>
 </RCC>

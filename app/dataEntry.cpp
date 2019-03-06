@@ -1,9 +1,11 @@
 #include "dataEntry.h"
+#include <QVBoxLayout>
 
-DataEntry::DataEntry(QWidget *parent, Qt::WindowFlags f) : QDialog(parent, f)
+DataEntry::DataEntry(QList<QString> fields, QList<QString> labels, QWidget *parent, Qt::WindowFlags f)
+    : QDialog(parent, f), dbFields(fields), labelTexts(labels)
 {
     // Title widget
-    title = new QLabel("Enter Information:");
+    title = new QLabel("Enter information:");
     title->setFont(QFont("Futura", 20, QFont::Medium));
 
     // Action buttons for submitting and canceling database insertions
@@ -19,8 +21,23 @@ DataEntry::DataEntry(QWidget *parent, Qt::WindowFlags f) : QDialog(parent, f)
     cancelBtn->setFont(btnFont);
     cancelBtn->setObjectName("cancel");
 
-    // Set up the layout
-    configureLayout();
+    // Action button layout
+    QHBoxLayout* btnLayout = new QHBoxLayout;
+    btnLayout->addWidget(submitBtn);
+    btnLayout->addWidget(cancelBtn);
+
+    // Main layout
+    QVBoxLayout* layout = new QVBoxLayout;
+    layout->addWidget(title);
+    layout->addLayout(btnLayout);
+    setLayout(layout);
+
+    // Remove ID items of fields and labels and add ':' in front of each label
+    dbFields.removeFirst();
+    labelTexts.removeFirst();
+    QList<QString>::iterator i;
+    for (i = labelTexts.begin(); i != labelTexts.end(); i++)
+        i->append(":");
 
     // Connect signals and slots for action buttons
     connect(submitBtn, SIGNAL(released()), this, SLOT(accept()));
@@ -30,34 +47,4 @@ DataEntry::DataEntry(QWidget *parent, Qt::WindowFlags f) : QDialog(parent, f)
 DataEntry::~DataEntry()
 {
 
-}
-
-QHash<QString, QString> DataEntry::getData() const
-{
-    QHash<QString, QString> data;
-    for (int i = 0; i < dbFields.length(); i++)
-        data.insert(dbFields[i], lineEditList[i]->text());
-    return data;
-}
-
-void DataEntry::configureLayout()
-{
-    // Main dialog layout
-    QVBoxLayout* layout = new QVBoxLayout;
-    layout->setSpacing(20);
-    layout->setSizeConstraint(QLayout::SetFixedSize);
-    layout->addWidget(title, 1);
-
-    // Line edit layout
-    QGridLayout* lineEditLayout = new QGridLayout;
-    layout->addLayout(lineEditLayout);
-    lineEditLayout->setSpacing(20);
-
-    // Action button layout
-    QHBoxLayout* btnLayout = new QHBoxLayout;
-    btnLayout->addWidget(submitBtn);
-    btnLayout->addWidget(cancelBtn);
-    layout->addLayout(btnLayout, 2);
-
-    setLayout(layout);
 }
