@@ -1,7 +1,7 @@
 #include "dataEntry.h"
 #include <QVBoxLayout>
 
-DataEntry::DataEntry(QList<QString> fields, QList<QString> labels, QWidget *parent, Qt::WindowFlags f)
+DataEntry::DataEntry(const QVector<QString>& fields, const QVector<QString>& labels, QWidget *parent, Qt::WindowFlags f)
     : QDialog(parent, f), dbFields(fields), labelTexts(labels)
 {
     // Title widget
@@ -32,10 +32,9 @@ DataEntry::DataEntry(QList<QString> fields, QList<QString> labels, QWidget *pare
     layout->addLayout(btnLayout);
     setLayout(layout);
 
-    // Remove ID items of fields and labels and add ':' in front of each label
-    dbFields.removeFirst();
+    // Remove ID items of labels and add ':' in front of each label
     labelTexts.removeFirst();
-    QList<QString>::iterator i;
+    QVector<QString>::iterator i;
     for (i = labelTexts.begin(); i != labelTexts.end(); i++)
         i->append(":");
 

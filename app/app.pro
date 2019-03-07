@@ -43,7 +43,8 @@ HEADERS += \
     dataEntry.h \
     defectEntry.h \
     dataEntryFactory.h \
-    testEntry.h
+    testEntry.h \
+    enums.h
 
 FORMS += \
         control.ui

@@ -10,7 +10,7 @@ class DefectEntry : public DataEntry
 {
     Q_OBJECT
 public:
-    explicit DefectEntry(QList<QString>, QList<QString>, QWidget* parent = nullptr);
+    explicit DefectEntry(const QVector<QString>&, const QVector<QString>&, QWidget* parent = nullptr);
     virtual QHash<QString, QString> getData() const;
 
 private:

@@ -1,7 +1,7 @@
 #include "defectEntry.h"
 #include <QGridLayout>
 
-DefectEntry::DefectEntry(QList<QString> fields, QList<QString> labels, QWidget* parent)
+DefectEntry::DefectEntry(const QVector<QString>& fields, const QVector<QString>& labels, QWidget* parent)
     : DataEntry(fields, labels, parent)
 {
     // Create labels, a line edit, and a text edit and add them to a grid layout

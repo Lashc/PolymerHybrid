@@ -1,5 +1,6 @@
 #include "databaseMenu.h"
 #include "dataEntryFactory.h"
+#include "enums.h"
 #include <sstream>
 #include <QFile>
 #include <QDebug>
@@ -9,14 +10,6 @@
 #include <QGroupBox>
 #include <QHeaderView>
 
-// Button IDs used for switching between tables
-enum ButtonID {
-    printID,
-    testID,
-    defectID,
-    allID
-};
-
 DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 {
     // Initialize the database
@@ -24,6 +17,23 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     if (error.type() != QSqlError::NoError) {
         qDebug() << "Database error: " << error;
     }
+
+    // Get the database fields from a file
+    QFile fieldsFile(":/database_fields.rtf");
+    fieldsFile.open(QFile::ReadOnly | QFile::Text);
+    QTextStream inFields(&fieldsFile);
+    QStringList fieldsLine;
+    while (!inFields.atEnd())
+        dbFields.append((inFields.readLine().split(",")).toVector());
+    fieldsFile.close();
+
+    // Get the database labels from a file
+    QFile labelsFile(":/database_labels.rtf");
+    labelsFile.open(QFile::ReadOnly | QFile::Text);
+    QTextStream inLabels(&labelsFile);
+    while (!inLabels.atEnd())
+        columnTitles.append(inLabels.readLine().split(",").toVector());
+    labelsFile.close();
 
     // Table view and SQL models
     QFont headerFont("Futura", 14);
@@ -228,8 +238,8 @@ DatabaseMenu::~DatabaseMenu()
 
 void DatabaseMenu::changeTable(int id)
 {
-    // List of nicer looking titles
-    QList<QString> columnTitles;
+    // Titles for this particular set of data
+    QVector<QString> titles = columnTitles[id];
 
     // Select from all tables
     if (id == allID) {
@@ -247,29 +257,14 @@ void DatabaseMenu::changeTable(int id)
                              "D.description "
                              "FROM prints P "
                              "LEFT JOIN tolerances T ON P.id=T.print_id "
-                             "LEFT JOIN defects D on T.print_id=D.print_id;");
-        columnTitles = { "Print ID", "Date", "Description", "Experiment", "Drying time (hr)",
-                         "Setup time (min)", "Cycle time (hr)", "Shut down time (min)", "Transition time (hr)",
-                         "Nozzle temperature (°C)", "Spindle speeed (RPM)", "Feed rate (m/min)",
-                         "Bed temperature (°C)", "Dryer temperature (°C)", "Dryer method",
-                         "Surface finish", "Layer time (min)", "Rapid %", "Thermal video", "Visual video",
-                         "Height (mm)", "Width (mm)", "Bead width (mm)", "Ultimate tensile strength (MPa) (Coupons 1-12)",
-                         "Yield strength (MPa) (Coupons 1-12)", "Modulus of elasticity (GPa) (Coupons 1-12)",
-                         "Percent elongation (Coupons 1-12)", "Cross sectional area (mm^2) (Coupons 1-12)",
-                         "Defect description" };
+                             "LEFT JOIN defects D on P.id=D.print_id;");
     }
 
     // Select from one table (or two for test results)
     else {
         QString query;
-        if (id  == printID) {
+        if (id  == printID)
             query = "SELECT * FROM prints;";
-            columnTitles = { "ID", "Date", "Description", "Experiment", "Drying time (hr)",
-                             "Setup time (min)", "Cycle time (hr)", "Shut down time (min)", "Transition time (hr)",
-                             "Nozzle temperature (°C)", "Spindle speeed (RPM)", "Feed rate (m/min)",
-                             "Bed temperature (°C)", "Dryer temperature (°C)", "Dryer method",
-                             "Surface finish", "Layer time (min)", "Rapid %", "Thermal video", "Visual video" };
-        }
 
         else if (id == testID) {
             query = "SELECT T.*,"
@@ -284,22 +279,18 @@ void DatabaseMenu::changeTable(int id)
                     "(SELECT GROUP_CONCAT(cross_area, \", \") FROM "
                         "(SELECT TE.cross_area FROM tensile TE WHERE tolerance_id = T.id ORDER BY TE.coupon)) "
                     "FROM tolerances T;";
-            columnTitles = { "ID", "Print ID", "Height (mm)", "Width (mm)", "Bead width (mm)",
-                             "Ultimate tensile strength (MPa) (Coupons 1-12)", "Yield strength (MPa) (Coupons 1-12)",
-                             "Modulus of elasticity (GPa) (Coupons 1-12)", "Percent elongation (Coupons 1-12)",
-                             "Cross sectional area (mm^2) (Coupons 1-12)" };
+            for (int i = titles.length() - NUM_TENSILE_TESTS; i < titles.length(); i++)
+                titles[i].append(" (Coupons 1-" + QString::number(NUM_COUPONS) + ")");
         }
 
-        else if (id == defectID) {
+        else if (id == defectID)
             query = "SELECT * FROM defects;";
-            columnTitles = { "ID", "Print ID", "Description" };
-        }
         queryModel->setQuery(query);
     }
 
     // Set the column titles
-    for (int i = 0; i < columnTitles.length(); i++)
-        queryModel->setHeaderData(i, Qt::Horizontal, columnTitles[i]);
+    for (int i = 0; i < titles.length(); i++)
+        queryModel->setHeaderData(i, Qt::Horizontal, titles[i]);
     table->resizeColumnsToContents();
     table->resizeRowsToContents();
 }
@@ -311,14 +302,44 @@ void DatabaseMenu::openDataDialog()
         // Tell user to select a specific data set
         return;
     }
-    recordDialog = DataEntryFactory::createDataEntry(id, this);
+    recordDialog = DataEntryFactory::createDataEntry(id, dbFields, columnTitles, this);
     connect(recordDialog, SIGNAL(accepted()), this, SLOT(addRecord()));
     recordDialog->open();
 }
 
 void DatabaseMenu::addRecord()
 {
+    // Get the data from the dialog and the particular table fields
     QHash<QString, QString> data = recordDialog->getData();
-    // Process data...
+    int id = radioGroup->checkedId();
+    QVector<QString> fields = dbFields[id];
+    QString fieldsString;
+    int i;
+    for (i = 0; i < fields.length() - 1; i++)
+        fieldsString.append(fields[i] + ", ");
+    fieldsString.append(fields[i]);
+
+    // Formulate and execute queries
+    QSqlQuery q;
+    QString insertQuery = "INSERT INTO ";
+    if (id == printID || id == defectID) {
+        QString table = id == printID ? "prints" : "defects";
+        insertQuery.append(" " + table + " (" + fieldsString + ") VALUES (");
+        int j;
+        for (j = 0; j < fields.length() - 1; j++)
+            insertQuery.append(":" + fields[j] + ", ");
+        insertQuery.append(":" + fields[j]);
+        insertQuery.append(");");
+        q.prepare(insertQuery);
+        for (j = 0; j < fields.length(); j++)
+            q.bindValue(j, data[fields[j]]);
+        q.exec();
+    }
+    else if (id == testID) {
+        // Insert test entries...
+    }
+
+    // Delete the dialog and refresh the table
     delete recordDialog;
+    changeTable(id);
 }

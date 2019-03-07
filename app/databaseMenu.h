@@ -18,6 +18,8 @@ public:
     ~DatabaseMenu();
 
 private:
+    QVector<QVector<QString>> dbFields;
+    QVector<QVector<QString>> columnTitles;
     QSqlQueryModel* queryModel;
     QTableView* table;
     QButtonGroup* radioGroup;

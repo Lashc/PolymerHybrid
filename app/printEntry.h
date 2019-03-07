@@ -9,11 +9,11 @@ class PrintEntry : public DataEntry
 {
     Q_OBJECT
 public:
-    explicit PrintEntry(QList<QString>, QList<QString>, QWidget* parent = nullptr);
+    explicit PrintEntry(const QVector<QString>&, const QVector<QString>&, QWidget* parent = nullptr);
     virtual QHash<QString, QString> getData() const;
 
 private:
-    QList<QLineEdit *> lineEdits;
+    QVector<QLineEdit *> lineEdits;
 };
 
 #endif // PRINTENTRY_H

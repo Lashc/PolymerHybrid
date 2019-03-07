@@ -1,7 +1,7 @@
 #include "printEntry.h"
 #include <QGridLayout>
 
-PrintEntry::PrintEntry(QList<QString> fields, QList<QString> labels, QWidget* parent)
+PrintEntry::PrintEntry(const QVector<QString>& fields, const QVector<QString>& labels, QWidget* parent)
     : DataEntry(fields, labels, parent)
 {
     // Add labels and line edits to a grid layout

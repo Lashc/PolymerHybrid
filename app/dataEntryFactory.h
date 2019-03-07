@@ -9,7 +9,7 @@
 class DataEntryFactory
 {
 public:
-    static DataEntry* createDataEntry(int, QWidget* parent = nullptr);
+    static DataEntry* createDataEntry(int, const QVector<QVector<QString>>&, const QVector<QVector<QString>>&, QWidget* parent = nullptr);
 };
 
 #endif // DATAENTRYFACTORY_H
