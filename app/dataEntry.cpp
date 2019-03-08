@@ -1,8 +1,8 @@
 #include "dataEntry.h"
 #include <QVBoxLayout>
 
-DataEntry::DataEntry(const QVector<QString>& fields, const QVector<QString>& labels, QWidget *parent, Qt::WindowFlags f)
-    : QDialog(parent, f), dbFields(fields), labelTexts(labels)
+DataEntry::DataEntry(const QStringList& labels, QWidget *parent, Qt::WindowFlags f)
+    : QDialog(parent, f), labelTexts(labels)
 {
     // Title widget
     title = new QLabel("Enter information:");
@@ -32,11 +32,10 @@ DataEntry::DataEntry(const QVector<QString>& fields, const QVector<QString>& lab
     layout->addLayout(btnLayout);
     setLayout(layout);
 
-    // Remove ID items of labels and add ':' in front of each label
+    // Remove ID item of labels and add ':' in front of each label
     labelTexts.removeFirst();
-    QVector<QString>::iterator i;
-    for (i = labelTexts.begin(); i != labelTexts.end(); i++)
-        i->append(":");
+    for (QString& label : labelTexts)
+        label.append(":");
 
     // Connect signals and slots for action buttons
     connect(submitBtn, SIGNAL(released()), this, SLOT(accept()));

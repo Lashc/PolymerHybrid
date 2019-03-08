@@ -3,14 +3,9 @@
 #include <QTabWidget>
 #include <QGridLayout>
 
-TestEntry::TestEntry(const QVector<QString>& fields, const QVector<QString>& labels, QWidget* parent)
-    : DataEntry(fields, labels, parent)
+TestEntry::TestEntry(const QStringList& labels, QWidget* parent)
+    : DataEntry(labels, parent)
 {
-    // Remove 'coupon' field from 'tolerances' table and ID and tolerance ID fields from 'tensile' table
-    dbFields.removeOne("coupon");
-    dbFields.removeOne("id");
-    dbFields.removeOne("tolerance_id");
-
     // Tab widget and list of tabs
     QTabWidget* tabs = new QTabWidget(this);
     QVector<QWidget *> tabList;
@@ -18,7 +13,8 @@ TestEntry::TestEntry(const QVector<QString>& fields, const QVector<QString>& lab
     // Create tolerances tab with labels and line edits in grid layout
     QWidget* toleranceTab = new QWidget;
     QGridLayout* toleranceLayout = new QGridLayout;
-    for (int i = 0; i < dbFields.length() - NUM_TENSILE_TESTS; i++) {
+    int numToleranceInputs = labelTexts.length() - NUM_TENSILE_TESTS;
+    for (int i = 0; i < numToleranceInputs; i++) {
         toleranceLayout->addWidget(new QLabel(labelTexts[i]), i / 2, (2 * i) % 4);
         QLineEdit* input = new QLineEdit;
         toleranceLineEdits.append(input);
@@ -29,7 +25,7 @@ TestEntry::TestEntry(const QVector<QString>& fields, const QVector<QString>& lab
 
     // Create tensile test tabs for coupons with labels and line edits in grid layouts
     QVector<QString> tensileLabels;
-    for (int i = labelTexts.length() - NUM_TENSILE_TESTS; i < labelTexts.length(); i++)
+    for (int i = numToleranceInputs; i < labelTexts.length(); i++)
         tensileLabels.append(labelTexts[i]);
     for (int i = 0; i < NUM_COUPONS; i++) {
         QWidget* couponTab = new QWidget;
@@ -52,17 +48,16 @@ TestEntry::TestEntry(const QVector<QString>& fields, const QVector<QString>& lab
     mainLayout->insertWidget(1, tabs);
 }
 
-QHash<QString, QString> TestEntry::getData() const
+QStringList TestEntry::getData() const
 {
-    QHash<QString, QString> data;
-    int i;
-    for (i = 0; i < toleranceLineEdits.length(); i++)
-        data.insert(dbFields[i], toleranceLineEdits[i]->text());
-    for (int tensile = 0; tensile < NUM_TENSILE_TESTS; tensile++) {
+    QStringList data;
+    foreach(const QLineEdit* tolInput, toleranceLineEdits)
+        data.append(tolInput->text());
+    foreach(const QVector<QLineEdit *>& couponTensileList, couponLineEdits) {
         QStringList tensileList;
-        for (int coupon = 0; coupon < NUM_COUPONS; coupon++)
-            tensileList.append(couponLineEdits[coupon][tensile]->text());
-        data.insert(dbFields[i + tensile], tensileList.join(", "));
+        foreach(const QLineEdit* tensileInputs, couponTensileList)
+            tensileList.append(tensileInputs->text());
+        data.append(tensileList.join(", "));
     }
     return data;
 }

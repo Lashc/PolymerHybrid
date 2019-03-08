@@ -9,6 +9,7 @@
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QHeaderView>
+#include <QMessageBox>
 
 DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 {
@@ -18,13 +19,17 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
         qDebug() << "Database error: " << error;
     }
 
+    // Enable foreign keys
+    QSqlQuery enableQuery("PRAGMA foreign_keys = ON;");
+    enableQuery.exec();
+
     // Get the database fields from a file
     QFile fieldsFile(":/database_fields.rtf");
     fieldsFile.open(QFile::ReadOnly | QFile::Text);
     QTextStream inFields(&fieldsFile);
     QStringList fieldsLine;
     while (!inFields.atEnd())
-        dbFields.append((inFields.readLine().split(",")).toVector());
+        dbFields.append((inFields.readLine().split(",")));
     fieldsFile.close();
 
     // Get the database labels from a file
@@ -32,7 +37,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     labelsFile.open(QFile::ReadOnly | QFile::Text);
     QTextStream inLabels(&labelsFile);
     while (!inLabels.atEnd())
-        columnTitles.append(inLabels.readLine().split(",").toVector());
+        columnTitles.append(inLabels.readLine().split(","));
     labelsFile.close();
 
     // Table view and SQL models
@@ -152,7 +157,7 @@ QSqlError DatabaseMenu::createTables()
     // Tolerances table
     createTable << "CREATE TABLE tolerances ("
                    "id INTEGER PRIMARY KEY,"
-                   "print_id INTEGER,"
+                   "print_id INTEGER UNIQUE,"
                    "height REAL CHECK(height > 0),"
                    "width REAL CHECK(width > 0),"
                    "bead_width REAL CHECK(bead_width > 0),"
@@ -172,7 +177,8 @@ QSqlError DatabaseMenu::createTables()
                    "yield REAL,"
                    "modulus_elasticity REAL,"
                    "cross_area REAL,"
-                   "FOREIGN KEY(tolerance_id) REFERENCES tolerances(id));";
+                   "FOREIGN KEY(tolerance_id) REFERENCES tolerances(id),"
+                   "CONSTRAINT ToleranceCoupon UNIQUE (tolerance_id,coupon));";
     if (!query.exec(createTable.str().c_str()))
         return query.lastError();
     createTable.str(std::string());
@@ -181,7 +187,7 @@ QSqlError DatabaseMenu::createTables()
     // Defects table
     createTable << "CREATE TABLE defects ("
                    "id INTEGER PRIMARY KEY,"
-                   "print_id INTEGER,"
+                   "print_id INTEGER UNIQUE,"
                    "description VARCHAR(1023) NOT NULL,"
                    "FOREIGN KEY(print_id) REFERENCES prints(id));";
     if (!query.exec(createTable.str().c_str()))
@@ -239,7 +245,7 @@ DatabaseMenu::~DatabaseMenu()
 void DatabaseMenu::changeTable(int id)
 {
     // Titles for this particular set of data
-    QVector<QString> titles = columnTitles[id];
+    QStringList titles = columnTitles[id];
 
     // Select from all tables
     if (id == allID) {
@@ -265,7 +271,6 @@ void DatabaseMenu::changeTable(int id)
         QString query;
         if (id  == printID)
             query = "SELECT * FROM prints;";
-
         else if (id == testID) {
             query = "SELECT T.*,"
                     "(SELECT GROUP_CONCAT(ultimate, \", \") FROM "
@@ -282,7 +287,6 @@ void DatabaseMenu::changeTable(int id)
             for (int i = titles.length() - NUM_TENSILE_TESTS; i < titles.length(); i++)
                 titles[i].append(" (Coupons 1-" + QString::number(NUM_COUPONS) + ")");
         }
-
         else if (id == defectID)
             query = "SELECT * FROM defects;";
         queryModel->setQuery(query);
@@ -299,10 +303,14 @@ void DatabaseMenu::openDataDialog()
 {
     int id = radioGroup->checkedId();
     if (id == allID) {
-        // Tell user to select a specific data set
+        // User must select a specific data set
+        QMessageBox selectDialog(QMessageBox::Information, QCoreApplication::applicationName(),
+                             "Please select a specific set of data to add\n"
+                             "a new record.", QMessageBox::Ok, this);
+        selectDialog.exec();
         return;
     }
-    recordDialog = DataEntryFactory::createDataEntry(id, dbFields, columnTitles, this);
+    recordDialog = DataEntryFactory::createDataEntry(id, columnTitles, this);
     connect(recordDialog, SIGNAL(accepted()), this, SLOT(addRecord()));
     recordDialog->open();
 }
@@ -310,33 +318,68 @@ void DatabaseMenu::openDataDialog()
 void DatabaseMenu::addRecord()
 {
     // Get the data from the dialog and the particular table fields
-    QHash<QString, QString> data = recordDialog->getData();
+    QStringList data = recordDialog->getData();
     int id = radioGroup->checkedId();
-    QVector<QString> fields = dbFields[id];
-    QString fieldsString;
-    int i;
-    for (i = 0; i < fields.length() - 1; i++)
-        fieldsString.append(fields[i] + ", ");
-    fieldsString.append(fields[i]);
+    QStringList fields = dbFields[id];
 
     // Formulate and execute queries
     QSqlQuery q;
     QString insertQuery = "INSERT INTO ";
     if (id == printID || id == defectID) {
+        // Simply insert all data from the dialog into the correct table
         QString table = id == printID ? "prints" : "defects";
-        insertQuery.append(" " + table + " (" + fieldsString + ") VALUES (");
-        int j;
-        for (j = 0; j < fields.length() - 1; j++)
-            insertQuery.append(":" + fields[j] + ", ");
-        insertQuery.append(":" + fields[j]);
-        insertQuery.append(");");
+        insertQuery.append(" " + table + " (" + fields.join(", ") + ") VALUES (");
+        int i;
+        for (i = 0; i < fields.length() - 1; i++)
+            insertQuery.append(":" + fields[i] + ", ");
+        insertQuery.append(":" + fields[i] + ");");
         q.prepare(insertQuery);
-        for (j = 0; j < fields.length(); j++)
-            q.bindValue(j, data[fields[j]]);
+        for (int j = 0; j < data.length(); j++)
+            q.bindValue(j, data[j]);
         q.exec();
     }
     else if (id == testID) {
-        // Insert test entries...
+        // Get the tensile and tolerance fields and put them in lists
+        const int tensileIdx = fields.indexOf("tolerance_id");
+        QStringList toleranceFields = fields.mid(0, tensileIdx);
+        QStringList tensileFields = fields.mid(tensileIdx);
+
+        // Form and execute query for 'tolerances' table
+        insertQuery.append(" tolerances (" + toleranceFields.join(", ") + ") VALUES (");
+        int i;
+        for (i = 0; i < toleranceFields.length() - 1; i++)
+            insertQuery.append(":" + toleranceFields[i] + ", ");
+        insertQuery.append(":" + toleranceFields[i] + ");");
+        q.prepare(insertQuery);
+        int dataIdx;
+        for (dataIdx = 0; dataIdx < toleranceFields.length(); dataIdx++)
+            q.bindValue(dataIdx, data[dataIdx]);
+        q.exec();
+
+        // Get the tolerance ID from the previous insertion
+        q.exec("SELECT last_insert_rowid();");
+        q.first();
+        const int toleranceID = q.value(0).toInt();
+
+        // Form query for 'tensile' table
+        insertQuery = "INSERT INTO tensile (" + tensileFields.join(", ") + ")" + "VALUES (";
+        for (i = 0; i < tensileFields.length() - 1; i++)
+            insertQuery.append(":" + tensileFields[i] + ", ");
+        insertQuery.append(":" + tensileFields[i] + ");");
+        q.prepare(insertQuery);
+
+        // Gather tensile data and execute a query for each coupon
+        QVector<QStringList> tensiles;
+        for (i = dataIdx; i < data.length(); i++)
+            tensiles.append(data[i].split(", "));
+        const int tensileOffset = tensileFields.length() - NUM_TENSILE_TESTS;
+        for (i = 0; i < NUM_COUPONS; i++) {
+            q.bindValue(0, toleranceID);
+            q.bindValue(1, i + 1);
+            for (int j = 0; j < NUM_TENSILE_TESTS; j++)
+                q.bindValue(j + tensileOffset, tensiles[i][j]);
+            q.exec();
+        }
     }
 
     // Delete the dialog and refresh the table

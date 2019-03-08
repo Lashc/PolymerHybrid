@@ -10,13 +10,12 @@ class DataEntry : public QDialog
 {
     Q_OBJECT
 public:
-    DataEntry(const QVector<QString>&, const QVector<QString>&, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+    DataEntry(const QStringList&, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
     virtual ~DataEntry();
-    virtual QHash<QString, QString> getData() const = 0;
+    virtual QStringList getData() const = 0;
 
 protected:
-    QVector<QString> dbFields;
-    QVector<QString> labelTexts;
+    QStringList labelTexts;
 
 private:
     QLabel* title;

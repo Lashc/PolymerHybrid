@@ -1,8 +1,8 @@
 #include "printEntry.h"
 #include <QGridLayout>
 
-PrintEntry::PrintEntry(const QVector<QString>& fields, const QVector<QString>& labels, QWidget* parent)
-    : DataEntry(fields, labels, parent)
+PrintEntry::PrintEntry(const QStringList& labels, QWidget* parent)
+    : DataEntry(labels, parent)
 {
     // Add labels and line edits to a grid layout
     QGridLayout* lineEditLayout = new QGridLayout;
@@ -18,10 +18,10 @@ PrintEntry::PrintEntry(const QVector<QString>& fields, const QVector<QString>& l
     mainLayout->insertLayout(1, lineEditLayout);
 }
 
-QHash<QString, QString> PrintEntry::getData() const
+QStringList PrintEntry::getData() const
 {
-    QHash<QString, QString> data;
-    for (int i = 0; i < dbFields.length(); i++)
-        data.insert(dbFields[i], lineEdits[i]->text());
+    QStringList data;
+    foreach(const QLineEdit* input, lineEdits)
+        data.append(input->text());
     return data;
 }

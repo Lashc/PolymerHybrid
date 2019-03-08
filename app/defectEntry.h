@@ -10,8 +10,8 @@ class DefectEntry : public DataEntry
 {
     Q_OBJECT
 public:
-    explicit DefectEntry(const QVector<QString>&, const QVector<QString>&, QWidget* parent = nullptr);
-    virtual QHash<QString, QString> getData() const;
+    explicit DefectEntry(const QStringList&, QWidget* parent = nullptr);
+    virtual QStringList getData() const;
 
 private:
     QLineEdit* printIDEdit;

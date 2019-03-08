@@ -1,9 +1,18 @@
-/* General push buttons in the application */
-QPushButton {
+/* General push buttons that are children
+   of 'Menu' and 'DatabaseMenu */
+Menu > QPushButton {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 white, stop:1 rgb(188, 198, 204));
     border: 2px groove rgb(201, 21, 58);
 }
-QPushButton:pressed {
+Menu > QPushButton:pressed {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgb(188, 198, 204), stop:1 white);
+}
+
+DatabaseMenu > QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 white, stop:1 rgb(188, 198, 204));
+    border: 2px groove rgb(201, 21, 58);
+}
+DatabaseMenu > QPushButton:pressed {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgb(188, 198, 204), stop:1 white);
 }
 
