@@ -1,13 +1,16 @@
 #ifndef DATABASEMENU_H
 #define DATABASEMENU_H
 
-#include "dataEntry.h"
 #include <QWidget>
-#include <QTableView>
-#include <QtSql>
-#include <QRadioButton>
-#include <QPushButton>
-#include <QButtonGroup>
+
+struct DatabaseColumn;
+class QSqlQueryModel;
+class QTableView;
+class QButtonGroup;
+class QRadioButton;
+class QPushButton;
+class DataEntry;
+class QSqlError;
 
 // Class for database menu
 class DatabaseMenu : public QWidget
@@ -18,8 +21,7 @@ public:
     ~DatabaseMenu();
 
 private:
-    QVector<QStringList> dbFields;
-    QVector<QStringList> columnTitles;
+    QVector<QVector<DatabaseColumn>> DBColumns;
     QSqlQueryModel* queryModel;
     QTableView* table;
     QButtonGroup* radioGroup;
@@ -31,6 +33,7 @@ private:
     DataEntry* recordDialog;
 
     QSqlError initDB();
+    void setDBColumns();
     QSqlError createTables();
 
 signals:

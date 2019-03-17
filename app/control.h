@@ -2,7 +2,8 @@
 #define CONTROL_H
 
 #include <QWidget>
-#include <QStackedWidget>
+
+class QStackedWidget;
 
 class Control : public QWidget
 {

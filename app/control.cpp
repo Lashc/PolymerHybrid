@@ -1,6 +1,7 @@
 #include "control.h"
 #include "menu.h"
 #include "databaseMenu.h"
+#include <QStackedWidget>
 #include <QVBoxLayout>
 
 Control::Control(QWidget *parent) : QWidget(parent)

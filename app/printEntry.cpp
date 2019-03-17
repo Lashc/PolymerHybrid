@@ -1,13 +1,15 @@
 #include "printEntry.h"
+#include <QLineEdit>
 #include <QGridLayout>
+#include <QLabel>
 
 PrintEntry::PrintEntry(const QStringList& labels, QWidget* parent)
     : DataEntry(labels, parent)
 {
     // Add labels and line edits to a grid layout
     QGridLayout* lineEditLayout = new QGridLayout;
-    for (int i = 0; i < labelTexts.length(); i++) {
-        lineEditLayout->addWidget(new QLabel(labelTexts[i]), i / 2, (2 * i) % 4);
+    for (int i = 0; i < labels.length(); i++) {
+        lineEditLayout->addWidget(new QLabel(labels[i]), i / 2, (2 * i) % 4);
         QLineEdit* input = new QLineEdit;
         lineEdits.append(input);
         lineEditLayout->addWidget(input, i / 2, ((2 * i) + 1) % 4);

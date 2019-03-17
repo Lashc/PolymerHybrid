@@ -1,9 +1,13 @@
 #include "dataEntry.h"
+#include <QLabel>
+#include <QPushButton>
 #include <QVBoxLayout>
 
 DataEntry::DataEntry(const QStringList& labels, QWidget *parent, Qt::WindowFlags f)
-    : QDialog(parent, f), labelTexts(labels)
+    : QDialog(parent, f), labels(labels)
 {
+    // Add colons in front of the labels
+
     // Title widget
     title = new QLabel("Enter information:");
     title->setFont(QFont("Futura", 20, QFont::Medium));
@@ -31,11 +35,6 @@ DataEntry::DataEntry(const QStringList& labels, QWidget *parent, Qt::WindowFlags
     layout->addWidget(title);
     layout->addLayout(btnLayout);
     setLayout(layout);
-
-    // Remove ID item of labels and add ':' in front of each label
-    labelTexts.removeFirst();
-    for (QString& label : labelTexts)
-        label.append(":");
 
     // Connect signals and slots for action buttons
     connect(submitBtn, SIGNAL(released()), this, SLOT(accept()));

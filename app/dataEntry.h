@@ -2,8 +2,8 @@
 #define DATAENTRY_H
 
 #include <QDialog>
-#include <QLabel>
-#include <QPushButton>
+
+class QLabel;
 
 // Dialog abstract base class for adding new records to the database
 class DataEntry : public QDialog
@@ -15,7 +15,7 @@ public:
     virtual QStringList getData() const = 0;
 
 protected:
-    QStringList labelTexts;
+    QStringList labels;
 
 private:
     QLabel* title;

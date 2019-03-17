@@ -1,5 +1,14 @@
-#ifndef ENUMS_H
-#define ENUMS_H
+#ifndef TYPES_H
+#define TYPES_H
+
+#include <QString>
+
+// Structure for grouping information about table fields
+struct DatabaseColumn
+{
+    QString field;
+    QString label;
+};
 
 // IDs for indexing groups of data in the database
 enum DataID {
@@ -13,4 +22,4 @@ enum DataID {
 const int NUM_COUPONS = 12;
 const int NUM_TENSILE_TESTS = 5;
 
-#endif // ENUMS_H
+#endif // TYPES_H

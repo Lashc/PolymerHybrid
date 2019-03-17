@@ -2,7 +2,8 @@
 #define PRINTENTRY_H
 
 #include "dataEntry.h"
-#include <QLineEdit>
+
+class QLineEdit;
 
 // Dialog class for adding new print entries to the 'prints' table of the database
 class PrintEntry : public DataEntry
@@ -10,7 +11,7 @@ class PrintEntry : public DataEntry
     Q_OBJECT
 public:
     explicit PrintEntry(const QStringList&, QWidget* parent = nullptr);
-    virtual QStringList getData() const;
+    QStringList getData() const override;
 
 private:
     QVector<QLineEdit *> lineEdits;

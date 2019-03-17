@@ -44,7 +44,7 @@ HEADERS += \
     defectEntry.h \
     dataEntryFactory.h \
     testEntry.h \
-    enums.h
+    types.h
 
 FORMS += \
         control.ui
@@ -59,5 +59,6 @@ RESOURCES += \
 
 DISTFILES += \
     menu_style.qss \
-    database_fields.rtf \
-    database_labels.rtf
+    print_fields.rtf \
+    test_fields.rtf \
+    defect_fields.rtf

@@ -1,7 +1,13 @@
 #include "databaseMenu.h"
 #include "dataEntryFactory.h"
-#include "enums.h"
-#include <sstream>
+#include "dataEntry.h"
+#include "types.h"
+#include <QtSql>
+#include <QTableView>
+#include <QButtonGroup>
+#include <QButtonGroup>
+#include <QRadioButton>
+#include <QPushButton>
 #include <QFile>
 #include <QDebug>
 #include <QDir>
@@ -13,32 +19,14 @@
 
 DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 {
-    // Initialize the database
+    // Initialize the database, enable foreign keys, and populate the database columns
     QSqlError error = initDB();
     if (error.type() != QSqlError::NoError) {
         qDebug() << "Database error: " << error;
     }
-
-    // Enable foreign keys
     QSqlQuery enableQuery("PRAGMA foreign_keys = ON;");
     enableQuery.exec();
-
-    // Get the database fields from a file
-    QFile fieldsFile(":/database_fields.rtf");
-    fieldsFile.open(QFile::ReadOnly | QFile::Text);
-    QTextStream inFields(&fieldsFile);
-    QStringList fieldsLine;
-    while (!inFields.atEnd())
-        dbFields.append((inFields.readLine().split(",")));
-    fieldsFile.close();
-
-    // Get the database labels from a file
-    QFile labelsFile(":/database_labels.rtf");
-    labelsFile.open(QFile::ReadOnly | QFile::Text);
-    QTextStream inLabels(&labelsFile);
-    while (!inLabels.atEnd())
-        columnTitles.append(inLabels.readLine().split(","));
-    labelsFile.close();
+    setDBColumns();
 
     // Table view and SQL models
     QFont headerFont("Futura", 14);
@@ -125,115 +113,68 @@ QSqlError DatabaseMenu::createTables()
 {
     // Form and execute queries for creating tables
     QSqlQuery query;
-    std::stringstream createTable;
+    QString createTable;
 
     // Prints table
-    createTable << "CREATE TABLE prints ("
-                   "id INTEGER PRIMARY KEY,"
-                   "date CHAR(10) NOT NULL,"
-                   "description VARCHAR(255) NOT NULL,"
-                   "experiment SMALLINT CHECK(experiment >= 0),"
-                   "dry_time REAL CHECK(dry_time >= 0),"
-                   "setup_time REAL CHECK(setup_time >= 0),"
-                   "cycle_time REAL CHECK(cycle_time >= 0),"
-                   "shutdown_time REAL CHECK(shutdown_time >= 0),"
-                   "transition_time REAL CHECK(transition_time >= 0),"
-                   "nozzle_temp REAL NOT NULL CHECK(nozzle_temp >= 0),"
-                   "spindle_speed REAL NOT NULL CHECK(spindle_speed > 0),"
-                   "feed_rate REAL NOT NULL CHECK(feed_rate > 0),"
-                   "bed_temp REAL NOT NULL CHECK(bed_temp >= 0 AND bed_temp <= 232),"
-                   "dryer_temp REAL CHECK(dryer_temp >= 0),"
-                   "dryer_method VARCHAR(50),"
-                   "surface_finish VARCHAR(50),"
-                   "layer_time REAL,"
-                   "rapids INT,"
-                   "thermal_video VARCHAR(255),"
-                   "visual_video VARCHAR(255));";
-    if (!query.exec(createTable.str().c_str()))
+    createTable = "CREATE TABLE prints ("
+                  "id INTEGER PRIMARY KEY,"
+                  "description VARCHAR(255) NOT NULL,"
+                  "date CHAR(10) NOT NULL,"
+                  "spindle_speed REAL NOT NULL CHECK(spindle_speed > 0),"
+                  "feed_rate REAL NOT NULL CHECK(feed_rate > 0),"
+                  "layer_height REAL NOT NULL CHECK(layer_height > 0),"
+                  "nozzle_temp REAL NOT NULL CHECK(nozzle_temp >= 0),"
+                  "bed_temp REAL NOT NULL CHECK(bed_temp >= 0 AND bed_temp <= 232),"
+                  "dryer_temp REAL CHECK(dryer_temp >= 0),"
+                  "ambient_temp REAL CHECK(ambient_temp >= 0),"
+                  "humidity TINYINT CHECK(humidity >= 0 AND humidity <= 100),"
+                  "surface_finish REAL CHECK(surface_finish >= 0),"
+                  "cycle_time CHAR(8),"
+                  "layer_time CHAR(8),"
+                  "experiment SMALLINT CHECK(experiment >= 0),"
+                  "dryer_method VARCHAR(50),"
+                  "dry_time CHAR(8),"
+                  "setup_time CHAR(8),"
+                  "shutdown_time CHAR(8),"
+                  "transition_time CHAR(8),"
+                  "video VARCHAR(255));";
+    if (!query.exec(createTable))
         return query.lastError();
-    createTable.str(std::string());
-    createTable.clear();
 
     // Tolerances table
-    createTable << "CREATE TABLE tolerances ("
-                   "id INTEGER PRIMARY KEY,"
-                   "print_id INTEGER UNIQUE,"
-                   "height REAL CHECK(height > 0),"
-                   "width REAL CHECK(width > 0),"
-                   "bead_width REAL CHECK(bead_width > 0),"
-                   "FOREIGN KEY(print_id) REFERENCES prints(id));";
-    if (!query.exec(createTable.str().c_str()))
+    createTable = "CREATE TABLE tolerances ("
+                  "id INTEGER PRIMARY KEY,"
+                  "print_id INTEGER UNIQUE,"
+                  "height REAL CHECK(height > 0),"
+                  "width REAL CHECK(width > 0),"
+                  "bead_width REAL CHECK(bead_width > 0),"
+                  "cross_image VARCHAR(255),"
+                  "FOREIGN KEY(print_id) REFERENCES prints(id));";
+    if (!query.exec(createTable))
         return query.lastError();
-    createTable.str(std::string());
-    createTable.clear();
 
     // Tensile tests table
-    createTable << "CREATE TABLE tensile ("
-                   "id INTEGER PRIMARY KEY,"
-                   "tolerance_id INTEGER,"
-                   "coupon SMALLINT CHECK(coupon >= 1 AND coupon <= 12),"
-                   "ultimate REAL,"
-                   "percent_elongation REAL,"
-                   "yield REAL,"
-                   "modulus_elasticity REAL,"
-                   "cross_area REAL,"
-                   "FOREIGN KEY(tolerance_id) REFERENCES tolerances(id),"
-                   "CONSTRAINT ToleranceCoupon UNIQUE (tolerance_id,coupon));";
-    if (!query.exec(createTable.str().c_str()))
+    createTable = "CREATE TABLE tensile ("
+                  "id INTEGER PRIMARY KEY,"
+                  "tolerance_id INTEGER,"
+                  "coupon TINYINT CHECK(coupon >= 1 AND coupon <= 12),"
+                  "ultimate REAL,"
+                  "percent_elongation REAL,"
+                  "yield REAL,"
+                  "modulus_elasticity REAL,"
+                  "cross_area REAL,"
+                  "FOREIGN KEY(tolerance_id) REFERENCES tolerances(id),"
+                  "CONSTRAINT ToleranceCoupon UNIQUE (tolerance_id,coupon));";
+    if (!query.exec(createTable))
         return query.lastError();
-    createTable.str(std::string());
-    createTable.clear();
 
     // Defects table
-    createTable << "CREATE TABLE defects ("
-                   "id INTEGER PRIMARY KEY,"
-                   "print_id INTEGER UNIQUE,"
-                   "description VARCHAR(1023) NOT NULL,"
-                   "FOREIGN KEY(print_id) REFERENCES prints(id));";
-    if (!query.exec(createTable.str().c_str()))
-        return query.lastError();
-    createTable.str(std::string());
-    createTable.clear();
-
-    // Test insertions into tables
-    if (!query.exec("INSERT INTO prints VALUES (NULL,\"2019-02-23\",\"Test 1\",1,1.0,1.25,"
-                    "1.50,1.75,2.0,100,200,100,200,300,\"Hopper/dryer\",\"Yes\",30.0,40,"
-                    "\"thermal1.avi\",\"visual1.avi\");"))
-        return query.lastError();
-    if (!query.exec("INSERT INTO prints VALUES (NULL,\"2019-02-27\",\"Test 2\",2,10.0,10.25,"
-                    "10.50,10.75,20.0,100,200,100,200,300,\"Hopper/dryer\",\"Yes\",30.0,40,"
-                    "\"thermal2.avi\",\"visual2.avi\");"))
-        return query.lastError();
-    if (!query.exec("INSERT INTO tolerances VALUES (NULL,1,20.0,20.0,1.0);"))
-        return query.lastError();
-    if (!query.exec("INSERT INTO tolerances VALUES (NULL,2,10.0,10.0,1.0);"))
-        return query.lastError();
-    for (double i = 1.0; i <= 12.0; i++) {
-        QString q = "INSERT INTO tensile VALUES (NULL,1,";
-        q += QString::number(int(i)) + ",";
-        q += QString::number(i*100) + ",";
-        q += QString::number(i*100) + ",";
-        q += QString::number(i*100) + ",";
-        q += QString::number(i*100) + ",";
-        q += QString::number(i) + ");";
-        if (!query.exec(q))
-            return query.lastError();
-        q = "";
-    }
-    for (double i = 1.0; i <= 12.0; i++) {
-        QString q = "INSERT INTO tensile VALUES (NULL,2,";
-        q += QString::number(int(i)) + ",";
-        q += QString::number(i*1000) + ",";
-        q += QString::number(i*1000) + ",";
-        q += QString::number(i*1000) + ",";
-        q += QString::number(i*1000) + ",";
-        q += QString::number(i) + ");";
-        if (!query.exec(q))
-            return query.lastError();
-        q = "";
-    }
-    if (!query.exec("INSERT INTO defects VALUES (NULL,1,\"Test\");"))
-        return query.lastError();
+    createTable = "CREATE TABLE defects ("
+                  "id INTEGER PRIMARY KEY,"
+                  "print_id INTEGER UNIQUE,"
+                  "description VARCHAR(1023) NOT NULL,"
+                  "FOREIGN KEY(print_id) REFERENCES prints(id));";
+    query.exec(createTable);
     return query.lastError();
 }
 
@@ -244,12 +185,24 @@ DatabaseMenu::~DatabaseMenu()
 
 void DatabaseMenu::changeTable(int id)
 {
-    // Titles for this particular set of data
-    QStringList titles = columnTitles[id];
+    // Titles for the set of data
+    QVector<QString> labels;
 
     // Select from all tables
     if (id == allID) {
-        queryModel->setQuery("SELECT P.*, T.height, T.width, T.bead_width,"
+        // Get the column labels for all tables, remove the empty ones, and keep
+        // the ID for only the 'prints' table
+        for (int i = printID; i < allID; i++) {
+            const QVector<DatabaseColumn>& columns = DBColumns[i];
+            for (int j = 0; j < columns.size(); j++)
+                labels.append(columns[j].label);
+        }
+        labels.removeAll("");
+        labels.removeAll("Print ID");
+        labels.prepend("Print ID");
+
+        // Set the query
+        queryModel->setQuery("SELECT P.*, T.height, T.width, T.bead_width, T.cross_image,"
                              "(SELECT GROUP_CONCAT(ultimate, \", \") FROM "
                                  "(SELECT TE.ultimate FROM tensile TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
                              "(SELECT GROUP_CONCAT(percent_elongation, \", \") FROM "
@@ -268,9 +221,19 @@ void DatabaseMenu::changeTable(int id)
 
     // Select from one table (or two for test results)
     else {
+        // Get the column labels, remove the empty ones, and add an ID one
+        const QVector<DatabaseColumn>& columns = DBColumns[id];
+        labels.reserve(columns.size());
+        foreach(const DatabaseColumn& column, columns)
+            labels.append(column.label);
+        labels.removeAll("");
+        labels.prepend("ID");
+
+        // Set the query based on the data ID
         QString query;
-        if (id  == printID)
+        if (id  == printID) {
             query = "SELECT * FROM prints;";
+        }
         else if (id == testID) {
             query = "SELECT T.*,"
                     "(SELECT GROUP_CONCAT(ultimate, \", \") FROM "
@@ -284,8 +247,8 @@ void DatabaseMenu::changeTable(int id)
                     "(SELECT GROUP_CONCAT(cross_area, \", \") FROM "
                         "(SELECT TE.cross_area FROM tensile TE WHERE tolerance_id = T.id ORDER BY TE.coupon)) "
                     "FROM tolerances T;";
-            for (int i = titles.length() - NUM_TENSILE_TESTS; i < titles.length(); i++)
-                titles[i].append(" (Coupons 1-" + QString::number(NUM_COUPONS) + ")");
+            for (int i = labels.length() - NUM_TENSILE_TESTS; i < labels.length(); i++)
+                labels[i].append(" (per coupon)");
         }
         else if (id == defectID)
             query = "SELECT * FROM defects;";
@@ -293,8 +256,8 @@ void DatabaseMenu::changeTable(int id)
     }
 
     // Set the column titles
-    for (int i = 0; i < titles.length(); i++)
-        queryModel->setHeaderData(i, Qt::Horizontal, titles[i]);
+    for (int i = 0; i < labels.length(); i++)
+        queryModel->setHeaderData(i, Qt::Horizontal, labels[i]);
     table->resizeColumnsToContents();
     table->resizeRowsToContents();
 }
@@ -310,17 +273,39 @@ void DatabaseMenu::openDataDialog()
         selectDialog.exec();
         return;
     }
-    recordDialog = DataEntryFactory::createDataEntry(id, columnTitles, this);
+    recordDialog = DataEntryFactory::createDataEntry(id, DBColumns, this);
     connect(recordDialog, SIGNAL(accepted()), this, SLOT(addRecord()));
     recordDialog->open();
+}
+
+void DatabaseMenu::setDBColumns()
+{
+    QVector<QString> fieldsFiles( {":/print_fields.rtf", ":/test_fields.rtf", ":/defect_fields.rtf"} );
+    for (int i = printID; i <= defectID; i++) {
+        QFile fieldsFile(fieldsFiles[i]);
+        fieldsFile.open(QFile::ReadOnly | QFile::Text);
+        QTextStream inFields(&fieldsFile);
+        QStringList fieldsLine;
+        QVector<DatabaseColumn> columns;
+        while (!inFields.atEnd()) {
+            fieldsLine = inFields.readLine().split(",");
+            columns.append( {fieldsLine[0], fieldsLine[1]} );
+        }
+        DBColumns.append(columns);
+        fieldsFile.close();
+    }
 }
 
 void DatabaseMenu::addRecord()
 {
     // Get the data from the dialog and the particular table fields
-    QStringList data = recordDialog->getData();
-    int id = radioGroup->checkedId();
-    QStringList fields = dbFields[id];
+    const QStringList& data = recordDialog->getData();
+    const int id = radioGroup->checkedId();
+    const QVector<DatabaseColumn>& columns = DBColumns[id];
+    QStringList fields;
+    fields.reserve(columns.size());
+    foreach(const DatabaseColumn& column, columns)
+        fields.append(column.field);
 
     // Formulate and execute queries
     QSqlQuery q;
@@ -328,7 +313,7 @@ void DatabaseMenu::addRecord()
     if (id == printID || id == defectID) {
         // Simply insert all data from the dialog into the correct table
         QString table = id == printID ? "prints" : "defects";
-        insertQuery.append(" " + table + " (" + fields.join(", ") + ") VALUES (");
+        insertQuery.append(table + " (" + fields.join(", ") + ") VALUES (");
         int i;
         for (i = 0; i < fields.length() - 1; i++)
             insertQuery.append(":" + fields[i] + ", ");
@@ -351,9 +336,8 @@ void DatabaseMenu::addRecord()
             insertQuery.append(":" + toleranceFields[i] + ", ");
         insertQuery.append(":" + toleranceFields[i] + ");");
         q.prepare(insertQuery);
-        int dataIdx;
-        for (dataIdx = 0; dataIdx < toleranceFields.length(); dataIdx++)
-            q.bindValue(dataIdx, data[dataIdx]);
+        for (i = 0; i < toleranceFields.length(); i++)
+            q.bindValue(i, data[i]);
         q.exec();
 
         // Get the tolerance ID from the previous insertion
@@ -370,9 +354,9 @@ void DatabaseMenu::addRecord()
 
         // Gather tensile data and execute a query for each coupon
         QVector<QStringList> tensiles;
-        for (i = dataIdx; i < data.length(); i++)
-            tensiles.append(data[i].split(", "));
         const int tensileOffset = tensileFields.length() - NUM_TENSILE_TESTS;
+        for (i = toleranceFields.length(); i < data.length(); i++)
+            tensiles.append(data[i].split(", "));
         for (i = 0; i < NUM_COUPONS; i++) {
             q.bindValue(0, toleranceID);
             q.bindValue(1, i + 1);

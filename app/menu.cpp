@@ -1,4 +1,6 @@
 #include "menu.h"
+#include <QPushButton>
+#include <QLabel>
 #include <QGridLayout>
 
 Menu::Menu(QWidget *parent) : QWidget(parent)

@@ -2,8 +2,9 @@
 #define MENU_H
 
 #include <QWidget>
-#include <QPushButton>
-#include <QLabel>
+
+class QLabel;
+class QPushButton;
 
 // Class for the main menu, which allows you to select between two sub-menus: "Database" and "Camera"
 class Menu : public QWidget
