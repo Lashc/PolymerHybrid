@@ -3,6 +3,7 @@
 Menu > QPushButton {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 white, stop:1 rgb(188, 198, 204));
     border: 2px groove rgb(201, 21, 58);
+    border-radius: 4px;
 }
 Menu > QPushButton:pressed {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgb(188, 198, 204), stop:1 white);
@@ -11,6 +12,7 @@ Menu > QPushButton:pressed {
 DatabaseMenu > QPushButton {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 white, stop:1 rgb(188, 198, 204));
     border: 2px groove rgb(201, 21, 58);
+    border-radius: 8px;
 }
 DatabaseMenu > QPushButton:pressed {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgb(188, 198, 204), stop:1 white);
@@ -19,6 +21,7 @@ DatabaseMenu > QPushButton:pressed {
 /* Push button for confirming to add records to the database */
 QPushButton#submit {
     border: 2px groove black;
+    border-radius: 4px;
     background: rgb(34, 200, 34);
 }
 QPushButton#submit:pressed {
@@ -28,6 +31,7 @@ QPushButton#submit:pressed {
 /* Push button for canceling adding records to the database */
 QPushButton#cancel {
     border: 2px groove black;
+    border-radius: 4px;
     background: rgb(255, 36, 0);
 }
 QPushButton#cancel:pressed {

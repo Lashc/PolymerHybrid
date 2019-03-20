@@ -16,6 +16,7 @@
 #include <QGroupBox>
 #include <QHeaderView>
 #include <QMessageBox>
+#include <QLabel>
 
 DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 {
@@ -35,8 +36,14 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     queryModel = new QSqlQueryModel(this);
     table->setModel(queryModel);
     table->setAlternatingRowColors(true);
-    table->horizontalHeader()->setFont(headerFont);
-    table->verticalHeader()->setFont(headerFont);
+    QHeaderView* const horizontalHeader = table->horizontalHeader();
+    horizontalHeader->setFont(headerFont);
+    horizontalHeader->setMaximumSectionSize(300);
+    QHeaderView* const verticalHeader = table->verticalHeader();
+    verticalHeader->setFont(headerFont);
+    verticalHeader->setMinimumWidth(50);
+    verticalHeader->setMinimumSectionSize(50);
+    verticalHeader->setDefaultAlignment(Qt::AlignCenter);
 
     // Create radio buttons and add them to a layout
     QFont radioFont("Futura", 15);
@@ -91,6 +98,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     // Connect signals and slots
     connect(radioGroup, SIGNAL(buttonPressed(int)), this, SLOT(changeTable(int)));
     connect(addBtn, SIGNAL(released()), this, SLOT(openDataDialog()));
+    connect(table->verticalHeader(), SIGNAL(sectionClicked(int)), this, SLOT(rowIDClicked(int)));
 }
 
 QSqlError DatabaseMenu::initDB()
@@ -369,4 +377,49 @@ void DatabaseMenu::addRecord()
     // Delete the dialog and refresh the table
     delete recordDialog;
     changeTable(id);
+}
+
+void DatabaseMenu::rowIDClicked(int rowNum)
+{
+    const int id = radioGroup->checkedId();
+    QSqlRecord row = queryModel->record(rowNum);
+    QVector<QString> labels;
+    QVBoxLayout* layout = new QVBoxLayout;
+    layout->setSpacing(20);
+    QLabel* header = new QLabel("Row " + QString::number(rowNum + 1) + " data");
+    QFont headerFont("Futura", 20, QFont::Medium);
+    headerFont.setUnderline(true);
+    header->setFont(headerFont);
+    header->setStyleSheet("QLabel { color: rgb(201, 21, 58); }");
+    layout->addWidget(header);
+    QGridLayout* gridLayout = new QGridLayout;
+    layout->addLayout(gridLayout);
+    QVector<DatabaseColumn> columns = DBColumns[id];
+    for (int i = 0; i < columns.size(); i++)
+        labels.append(columns[i].label);
+    labels.removeAll("");
+
+    for (int i = 0; i < row.count() - 1; i++) {
+        QVariant value = row.field(i + 1).value();
+        QString field = value.toString();
+        QLabel* fieldLabel = new QLabel(labels[i]);
+        fieldLabel->setFont(QFont("Avenir", 14, QFont::Bold));
+        gridLayout->addWidget(fieldLabel, i / 2, (2 * i) % 4);
+        QLabel* fieldText = new QLabel(field);
+        fieldText->setStyleSheet("QLabel { border: 3px solid rgb(0, 135, 200); "
+                                  "border-radius: 4px; padding: 5px; "
+                                  "background-color: rgb(230, 230, 230); }");
+        fieldText->setAlignment(Qt::AlignCenter);
+        fieldText->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        fieldText->setWordWrap(true);
+        gridLayout->addWidget(fieldText, i / 2, ((2 * i) + 1) % 4);
+        gridLayout->setHorizontalSpacing(20);
+    }
+
+    showData = new QDialog(this);
+    showData->setAttribute(Qt::WA_DeleteOnClose);
+    showData->setLayout(layout);
+    showData->show();
+    showData->raise();
+    showData->activateWindow();
 }

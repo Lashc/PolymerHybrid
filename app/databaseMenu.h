@@ -31,6 +31,7 @@ private:
     QRadioButton* allBtn;
     QPushButton* addBtn;
     DataEntry* recordDialog;
+    QDialog* showData;
 
     QSqlError initDB();
     void setDBColumns();
@@ -42,6 +43,7 @@ public slots:
     void changeTable(int);
     void openDataDialog();
     void addRecord();
+    void rowIDClicked(int);
 };
 
 #endif // DATABASEMENU_H
