@@ -9,7 +9,7 @@ DataEntry::DataEntry(const QStringList& labels, QWidget *parent, Qt::WindowFlags
     // Add colons in front of the labels
 
     // Title widget
-    title = new QLabel("Enter information:");
+    title = new QLabel("Enter data:");
     title->setFont(QFont("Futura", 20, QFont::Medium));
 
     // Action buttons for submitting and canceling database insertions

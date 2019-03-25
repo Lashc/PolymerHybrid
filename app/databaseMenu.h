@@ -6,6 +6,7 @@
 struct DatabaseColumn;
 class QSqlQueryModel;
 class QTableView;
+class QLabel;
 class QButtonGroup;
 class QRadioButton;
 class QPushButton;
@@ -29,21 +30,22 @@ private:
     QRadioButton* testBtn;
     QRadioButton* defectBtn;
     QRadioButton* allBtn;
+    QPushButton* backBtn;
     QPushButton* addBtn;
     DataEntry* recordDialog;
-    QDialog* showData;
 
     QSqlError initDB();
     void setDBColumns();
     QSqlError createTables();
 
 signals:
+    void returnToMainMenu();
 
 public slots:
     void changeTable(int);
     void openDataDialog();
     void addRecord();
-    void rowIDClicked(int);
+    void onRowIDClicked(int);
 };
 
 #endif // DATABASEMENU_H

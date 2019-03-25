@@ -4,6 +4,7 @@
 #include "dataEntry.h"
 
 class QLineEdit;
+class QTextEdit;
 
 // Dialog class for adding new print entries to the 'prints' table of the database
 class PrintEntry : public DataEntry
@@ -15,6 +16,7 @@ public:
 
 private:
     QVector<QLineEdit *> lineEdits;
+    QTextEdit* notes;
 };
 
 #endif // PRINTENTRY_H

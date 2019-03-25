@@ -38,7 +38,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     table->setAlternatingRowColors(true);
     QHeaderView* const horizontalHeader = table->horizontalHeader();
     horizontalHeader->setFont(headerFont);
-    horizontalHeader->setMaximumSectionSize(300);
+    horizontalHeader->setMaximumSectionSize(400);
     QHeaderView* const verticalHeader = table->verticalHeader();
     verticalHeader->setFont(headerFont);
     verticalHeader->setMinimumWidth(50);
@@ -75,15 +75,22 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 
     // Layout for selecting data and adding entries
     QVBoxLayout* optionsLayout = new QVBoxLayout;
-    optionsLayout->addWidget(btnBox, 4);
+    optionsLayout->addWidget(btnBox, 5);
+    optionsLayout->setSpacing(30);
 
     // Insert spacing and create push button for adding new record into database
-    optionsLayout->addStretch(3);
+    optionsLayout->addStretch(2);
     addBtn = new QPushButton("Add record");
     addBtn->setMinimumSize(200, 100);
     addBtn->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred, QSizePolicy::PushButton));
     addBtn->setFont(QFont("Gotham", 20, QFont::Medium));
     optionsLayout->addWidget(addBtn, 2);
+    backBtn = new QPushButton("Back");
+    backBtn->setMinimumSize(200, 100);
+    backBtn->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred, QSizePolicy::PushButton));
+    backBtn->setFont(QFont("Gotham", 20, QFont::Medium));
+    optionsLayout->addWidget(backBtn, 2);
+
 
     // Configure main layout
     QHBoxLayout* layout = new QHBoxLayout;
@@ -98,7 +105,8 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     // Connect signals and slots
     connect(radioGroup, SIGNAL(buttonPressed(int)), this, SLOT(changeTable(int)));
     connect(addBtn, SIGNAL(released()), this, SLOT(openDataDialog()));
-    connect(table->verticalHeader(), SIGNAL(sectionClicked(int)), this, SLOT(rowIDClicked(int)));
+    connect(backBtn, SIGNAL(released()), this->parentWidget(), SLOT(returnToMainMenu()));
+    connect(verticalHeader, SIGNAL(sectionClicked(int)), this, SLOT(onRowIDClicked(int)));
 }
 
 QSqlError DatabaseMenu::initDB()
@@ -126,11 +134,12 @@ QSqlError DatabaseMenu::createTables()
     // Prints table
     createTable = "CREATE TABLE prints ("
                   "id INTEGER PRIMARY KEY,"
-                  "description VARCHAR(255) NOT NULL,"
+                  "description VARCHAR(127) NOT NULL,"
                   "date CHAR(10) NOT NULL,"
                   "spindle_speed REAL NOT NULL CHECK(spindle_speed > 0),"
                   "feed_rate REAL NOT NULL CHECK(feed_rate > 0),"
                   "layer_height REAL NOT NULL CHECK(layer_height > 0),"
+                  "rapids SMALLINT NOT NULL CHECK(rapids > 0),"
                   "nozzle_temp REAL NOT NULL CHECK(nozzle_temp >= 0),"
                   "bed_temp REAL NOT NULL CHECK(bed_temp >= 0 AND bed_temp <= 232),"
                   "dryer_temp REAL CHECK(dryer_temp >= 0),"
@@ -145,7 +154,8 @@ QSqlError DatabaseMenu::createTables()
                   "setup_time CHAR(8),"
                   "shutdown_time CHAR(8),"
                   "transition_time CHAR(8),"
-                  "video VARCHAR(255));";
+                  "video VARCHAR(255),"
+                  "notes VARCHAR(1023));";
     if (!query.exec(createTable))
         return query.lastError();
 
@@ -275,10 +285,10 @@ void DatabaseMenu::openDataDialog()
     int id = radioGroup->checkedId();
     if (id == allID) {
         // User must select a specific data set
-        QMessageBox selectDialog(QMessageBox::Information, QCoreApplication::applicationName(),
+        QMessageBox selectDataDialog(QMessageBox::Information, "Select a data category",
                              "Please select a specific set of data to add\n"
                              "a new record.", QMessageBox::Ok, this);
-        selectDialog.exec();
+        selectDataDialog.exec();
         return;
     }
     recordDialog = DataEntryFactory::createDataEntry(id, DBColumns, this);
@@ -379,11 +389,19 @@ void DatabaseMenu::addRecord()
     changeTable(id);
 }
 
-void DatabaseMenu::rowIDClicked(int rowNum)
+void DatabaseMenu::onRowIDClicked(int rowNum)
 {
+    // Can't show a row for all data
     const int id = radioGroup->checkedId();
-    QSqlRecord row = queryModel->record(rowNum);
-    QVector<QString> labels;
+    if (id == allID) {
+        QMessageBox selectDataDialog(QMessageBox::Information, "Select a data category",
+                             "Please select a specific set of data to view\n"
+                             "a row of data.", QMessageBox::Ok, this);
+        selectDataDialog.exec();
+        return;
+    }
+
+    // Main layout for dialog with title
     QVBoxLayout* layout = new QVBoxLayout;
     layout->setSpacing(20);
     QLabel* header = new QLabel("Row " + QString::number(rowNum + 1) + " data");
@@ -392,9 +410,15 @@ void DatabaseMenu::rowIDClicked(int rowNum)
     header->setFont(headerFont);
     header->setStyleSheet("QLabel { color: rgb(201, 21, 58); }");
     layout->addWidget(header);
+
+    // Grid layout with pairs of labels and values
     QGridLayout* gridLayout = new QGridLayout;
     layout->addLayout(gridLayout);
+    gridLayout->setHorizontalSpacing(20);
+    gridLayout->setVerticalSpacing(10);
     QVector<DatabaseColumn> columns = DBColumns[id];
+    QSqlRecord row = queryModel->record(rowNum);
+    QVector<QString> labels;
     for (int i = 0; i < columns.size(); i++)
         labels.append(columns[i].label);
     labels.removeAll("");
@@ -408,15 +432,16 @@ void DatabaseMenu::rowIDClicked(int rowNum)
         QLabel* fieldText = new QLabel(field);
         fieldText->setStyleSheet("QLabel { border: 3px solid rgb(0, 135, 200); "
                                   "border-radius: 4px; padding: 5px; "
-                                  "background-color: rgb(230, 230, 230); }");
+                                  "background-color: rgb(230, 230, 230);"
+                                  "font-weight: 14; }");
         fieldText->setAlignment(Qt::AlignCenter);
         fieldText->setTextInteractionFlags(Qt::TextSelectableByMouse);
         fieldText->setWordWrap(true);
         gridLayout->addWidget(fieldText, i / 2, ((2 * i) + 1) % 4);
-        gridLayout->setHorizontalSpacing(20);
     }
 
-    showData = new QDialog(this);
+    // Create a modeless dialog with the constructed layout
+    QDialog* showData = new QDialog(this);
     showData->setAttribute(Qt::WA_DeleteOnClose);
     showData->setLayout(layout);
     showData->show();

@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
     a.setStyleSheet(styleSheet);
     qssFile.close();
 
+    // The main widget
     Control gui;
     gui.show();
     gui.setWindowTitle("Polymer Hybrid Manufacturing Data System");

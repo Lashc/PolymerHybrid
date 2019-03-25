@@ -13,6 +13,9 @@ public:
 
 private:
     QStackedWidget* pages;
+
+public slots:
+    void returnToMainMenu();
 };
 
 #endif // CONTROL_H

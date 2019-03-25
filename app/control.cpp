@@ -8,8 +8,8 @@ Control::Control(QWidget *parent) : QWidget(parent)
 {
     // Create and add pages to a stacked widget
     pages = new QStackedWidget;
-    Menu* mainMenu = new Menu;
-    DatabaseMenu* databasePage = new DatabaseMenu;
+    Menu* mainMenu = new Menu(this);
+    DatabaseMenu* databasePage = new DatabaseMenu(this);
     pages->addWidget(mainMenu);
     pages->addWidget(databasePage);
 
@@ -20,4 +20,9 @@ Control::Control(QWidget *parent) : QWidget(parent)
     QVBoxLayout* layout = new QVBoxLayout;
     layout->addWidget(pages);
     setLayout(layout);
+}
+
+void Control::returnToMainMenu()
+{
+    pages->setCurrentIndex(0);
 }
