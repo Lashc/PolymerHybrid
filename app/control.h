@@ -15,6 +15,7 @@ private:
     QStackedWidget* pages;
 
 public slots:
+    void onMenuButtonReleased(int);
     void returnToMainMenu();
 };
 

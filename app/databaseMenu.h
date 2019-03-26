@@ -44,7 +44,7 @@ signals:
 public slots:
     void changeTable(int);
     void openDataDialog();
-    void addRecord();
+    void addEntry();
     void onRowIDClicked(int);
 };
 

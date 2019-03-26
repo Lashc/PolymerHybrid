@@ -1,6 +1,8 @@
 #include "menu.h"
-#include <QPushButton>
+#include "types.h"
 #include <QLabel>
+#include <QButtonGroup>
+#include <QPushButton>
 #include <QGridLayout>
 
 Menu::Menu(QWidget *parent) : QWidget(parent)
@@ -8,10 +10,10 @@ Menu::Menu(QWidget *parent) : QWidget(parent)
     // Button properties
     QSizePolicy btnPolicy(QSizePolicy::Minimum, QSizePolicy::Preferred, QSizePolicy::PushButton);
     QFont btnFont("Gotham", 25, QFont::Medium);
-    QSize maxBtnSize(400, 200);
+    QSize maxBtnSize(350, 175);
     QSize minBtnSize(150, 75);
 
-    // Create the database and camera buttons
+    // Create the database, camera, and operations manual buttons
     databaseBtn = new QPushButton("Database");
     databaseBtn->setFont(btnFont);
     databaseBtn->setMaximumSize(maxBtnSize);
@@ -24,11 +26,23 @@ Menu::Menu(QWidget *parent) : QWidget(parent)
     cameraBtn->setMinimumSize(minBtnSize);
     cameraBtn->setSizePolicy(btnPolicy);
 
+    manualBtn = new QPushButton("Operations Manual");
+    manualBtn->setFont(btnFont);
+    manualBtn->setMaximumSize(maxBtnSize);
+    manualBtn->setMinimumSize(minBtnSize);
+    manualBtn->setSizePolicy(btnPolicy);
+
+    btnGroup = new QButtonGroup(this);
+    btnGroup->addButton(databaseBtn, databaseID);
+    btnGroup->addButton(cameraBtn, cameraID);
+    btnGroup->addButton(manualBtn, manualID);
+
     // Horizontal layout for buttons
     QHBoxLayout* btnLayout = new QHBoxLayout();
     btnLayout->addWidget(databaseBtn);
     btnLayout->addWidget(cameraBtn);
-    btnLayout->insertSpacing(1, 40);
+    btnLayout->addWidget(manualBtn);
+    btnLayout->setSpacing(30);
 
     // Create the label at the top
     title = new QLabel("Polymer Hybrid Manufacturing");
@@ -55,14 +69,13 @@ Menu::Menu(QWidget *parent) : QWidget(parent)
     grid->addWidget(banner, 2, 0, 1, 2);
     grid->setVerticalSpacing(100);
     grid->setHorizontalSpacing(20);
-
     setLayout(grid);
 
-    // Notify the stacked widget of a button click (and release)
-    connect(databaseBtn, SIGNAL(released()), this, SLOT(onDatabaseButtonClicked()));
+    // Notify the main 'Control' widget of a button click (and release)
+    connect(btnGroup, SIGNAL(buttonReleased(int)), this, SLOT(onButtonReleased(int)));
 }
 
-void Menu::onDatabaseButtonClicked()
+void Menu::onButtonReleased(int id)
 {
-    emit buttonClicked(1);
+    emit buttonReleased(id);
 }

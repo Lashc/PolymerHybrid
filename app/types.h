@@ -10,6 +10,13 @@ struct DatabaseColumn
     QString label;
 };
 
+// IDs for buttons on the main menu
+enum MainMenuButtonID {
+    databaseID = 1,
+    cameraID,
+    manualID
+};
+
 // IDs for indexing groups of data in the database
 enum DataID {
     printID,

@@ -5,7 +5,6 @@
 #include <QtSql>
 #include <QTableView>
 #include <QButtonGroup>
-#include <QButtonGroup>
 #include <QRadioButton>
 #include <QPushButton>
 #include <QFile>
@@ -78,9 +77,9 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     optionsLayout->addWidget(btnBox, 5);
     optionsLayout->setSpacing(30);
 
-    // Insert spacing and create push button for adding new record into database
+    // Insert spacing and create push button for adding new records into the database
     optionsLayout->addStretch(2);
-    addBtn = new QPushButton("Add record");
+    addBtn = new QPushButton("Add entry");
     addBtn->setMinimumSize(200, 100);
     addBtn->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred, QSizePolicy::PushButton));
     addBtn->setFont(QFont("Gotham", 20, QFont::Medium));
@@ -149,7 +148,6 @@ QSqlError DatabaseMenu::createTables()
                   "cycle_time CHAR(8),"
                   "layer_time CHAR(8),"
                   "experiment SMALLINT CHECK(experiment >= 0),"
-                  "dryer_method VARCHAR(50),"
                   "dry_time CHAR(8),"
                   "setup_time CHAR(8),"
                   "shutdown_time CHAR(8),"
@@ -287,12 +285,12 @@ void DatabaseMenu::openDataDialog()
         // User must select a specific data set
         QMessageBox selectDataDialog(QMessageBox::Information, "Select a data category",
                              "Please select a specific set of data to add\n"
-                             "a new record.", QMessageBox::Ok, this);
+                             "a new entry.", QMessageBox::Ok, this);
         selectDataDialog.exec();
         return;
     }
     recordDialog = DataEntryFactory::createDataEntry(id, DBColumns, this);
-    connect(recordDialog, SIGNAL(accepted()), this, SLOT(addRecord()));
+    connect(recordDialog, SIGNAL(accepted()), this, SLOT(addEntry()));
     recordDialog->open();
 }
 
@@ -314,7 +312,7 @@ void DatabaseMenu::setDBColumns()
     }
 }
 
-void DatabaseMenu::addRecord()
+void DatabaseMenu::addEntry()
 {
     // Get the data from the dialog and the particular table fields
     const QStringList& data = recordDialog->getData();
