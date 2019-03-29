@@ -37,6 +37,7 @@ private:
     QSqlError initDB();
     void setDBColumns();
     QSqlError createTables();
+    QVector<QString> getLabels(int);
 
 signals:
     void returnToMainMenu();

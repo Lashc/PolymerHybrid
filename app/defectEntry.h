@@ -11,7 +11,7 @@ class DefectEntry : public DataEntry
 {
     Q_OBJECT
 public:
-    explicit DefectEntry(const QStringList&, QWidget* parent = nullptr);
+    explicit DefectEntry(QStringList, QWidget* parent = nullptr);
     QStringList getData() const override;
 
 private:

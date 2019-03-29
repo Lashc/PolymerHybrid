@@ -10,7 +10,7 @@ class TestEntry : public DataEntry
 {
     Q_OBJECT
 public:
-    explicit TestEntry(const QStringList&, QWidget* parent = nullptr);
+    explicit TestEntry(QStringList, QWidget* parent = nullptr);
     QStringList getData() const override;
 
 private:

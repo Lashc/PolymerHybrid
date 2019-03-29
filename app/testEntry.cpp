@@ -5,7 +5,7 @@
 #include <QLabel>
 #include <QGridLayout>
 
-TestEntry::TestEntry(const QStringList& labels, QWidget* parent)
+TestEntry::TestEntry(QStringList labels, QWidget* parent)
     : DataEntry(labels, parent)
 {
     // Tab widget and list of tabs
@@ -15,9 +15,10 @@ TestEntry::TestEntry(const QStringList& labels, QWidget* parent)
     // Create tolerances tab with labels and line edits in grid layout
     QWidget* toleranceTab = new QWidget;
     QGridLayout* toleranceLayout = new QGridLayout;
-    int numToleranceInputs = labels.length() - NUM_TENSILE_TESTS;
+    const int numLabels = fieldLabels.length();
+    const int numToleranceInputs = numLabels - NUM_TENSILE_TESTS;
     for (int i = 0; i < numToleranceInputs; i++) {
-        toleranceLayout->addWidget(new QLabel(labels[i]), i / 2, (2 * i) % 4);
+        toleranceLayout->addWidget(new QLabel(fieldLabels[i]), i / 2, (2 * i) % 4);
         QLineEdit* input = new QLineEdit;
         toleranceLineEdits.append(input);
         toleranceLayout->addWidget(input, i / 2, ((2 * i) + 1) % 4);
@@ -27,8 +28,8 @@ TestEntry::TestEntry(const QStringList& labels, QWidget* parent)
 
     // Create tensile test tabs for coupons with labels and line edits in grid layouts
     QVector<QString> tensileLabels;
-    for (int i = numToleranceInputs; i < labels.length(); i++)
-        tensileLabels.append(labels[i]);
+    for (int i = numToleranceInputs; i < numLabels; i++)
+        tensileLabels.append(fieldLabels[i]);
     for (int i = 0; i < NUM_COUPONS; i++) {
         QWidget* couponTab = new QWidget;
         QVector<QLineEdit *> lineEdits;

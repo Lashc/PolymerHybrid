@@ -33,7 +33,8 @@ SOURCES += \
     dataEntry.cpp \
     defectEntry.cpp \
     dataEntryFactory.cpp \
-    testEntry.cpp
+    testEntry.cpp \
+    entryView.cpp
 
 HEADERS += \
         control.h \
@@ -44,7 +45,8 @@ HEADERS += \
     defectEntry.h \
     dataEntryFactory.h \
     testEntry.h \
-    types.h
+    types.h \
+    entryView.h
 
 FORMS += \
         control.ui

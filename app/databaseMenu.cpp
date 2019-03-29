@@ -1,6 +1,7 @@
 #include "databaseMenu.h"
 #include "dataEntryFactory.h"
 #include "dataEntry.h"
+#include "entryView.h"
 #include "types.h"
 #include <QtSql>
 #include <QTableView>
@@ -15,7 +16,6 @@
 #include <QGroupBox>
 #include <QHeaderView>
 #include <QMessageBox>
-#include <QLabel>
 
 DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 {
@@ -89,7 +89,6 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     backBtn->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred, QSizePolicy::PushButton));
     backBtn->setFont(QFont("Gotham", 20, QFont::Medium));
     optionsLayout->addWidget(backBtn, 2);
-
 
     // Configure main layout
     QHBoxLayout* layout = new QHBoxLayout;
@@ -201,19 +200,13 @@ DatabaseMenu::~DatabaseMenu()
 
 void DatabaseMenu::changeTable(int id)
 {
-    // Titles for the set of data
+    // Labels for the set of data
     QVector<QString> labels;
 
     // Select from all tables
     if (id == allID) {
-        // Get the column labels for all tables, remove the empty ones, and keep
-        // the ID for only the 'prints' table
-        for (int i = printID; i < allID; i++) {
-            const QVector<DatabaseColumn>& columns = DBColumns[i];
-            for (int j = 0; j < columns.size(); j++)
-                labels.append(columns[j].label);
-        }
-        labels.removeAll("");
+        for (int i = printID; i < allID; i++)
+            labels.append(getLabels(i));
         labels.removeAll("Print ID");
         labels.prepend("Print ID");
 
@@ -237,12 +230,9 @@ void DatabaseMenu::changeTable(int id)
 
     // Select from one table (or two for test results)
     else {
-        // Get the column labels, remove the empty ones, and add an ID one
-        const QVector<DatabaseColumn>& columns = DBColumns[id];
-        labels.reserve(columns.size());
-        foreach(const DatabaseColumn& column, columns)
-            labels.append(column.label);
-        labels.removeAll("");
+        // Get the column labels and add an ID one
+        labels.reserve(DBColumns[id].size());
+        labels = getLabels(id);
         labels.prepend("ID");
 
         // Set the query based on the data ID
@@ -263,7 +253,8 @@ void DatabaseMenu::changeTable(int id)
                     "(SELECT GROUP_CONCAT(cross_area, \", \") FROM "
                         "(SELECT TE.cross_area FROM tensile TE WHERE tolerance_id = T.id ORDER BY TE.coupon)) "
                     "FROM tolerances T;";
-            for (int i = labels.length() - NUM_TENSILE_TESTS; i < labels.length(); i++)
+            const int numLabels = labels.length();
+            for (int i = numLabels - NUM_TENSILE_TESTS; i < numLabels; i++)
                 labels[i].append(" (per coupon)");
         }
         else if (id == defectID)
@@ -272,7 +263,7 @@ void DatabaseMenu::changeTable(int id)
     }
 
     // Set the column titles
-    for (int i = 0; i < labels.length(); i++)
+    for (int i = 0, numLabels = labels.length(); i < numLabels; i++)
         queryModel->setHeaderData(i, Qt::Horizontal, labels[i]);
     table->resizeColumnsToContents();
     table->resizeRowsToContents();
@@ -316,12 +307,14 @@ void DatabaseMenu::addEntry()
 {
     // Get the data from the dialog and the particular table fields
     const QStringList& data = recordDialog->getData();
+    const int numData = data.length();
     const int id = radioGroup->checkedId();
     const QVector<DatabaseColumn>& columns = DBColumns[id];
     QStringList fields;
     fields.reserve(columns.size());
     foreach(const DatabaseColumn& column, columns)
         fields.append(column.field);
+    const int numFields = fields.length();
 
     // Formulate and execute queries
     QSqlQuery q;
@@ -330,13 +323,12 @@ void DatabaseMenu::addEntry()
         // Simply insert all data from the dialog into the correct table
         QString table = id == printID ? "prints" : "defects";
         insertQuery.append(table + " (" + fields.join(", ") + ") VALUES (");
-        int i;
-        for (i = 0; i < fields.length() - 1; i++)
+        for (int i = 0; i < numFields - 1; i++)
             insertQuery.append(":" + fields[i] + ", ");
-        insertQuery.append(":" + fields[i] + ");");
+        insertQuery.append(":" + fields[numFields - 1] + ");");
         q.prepare(insertQuery);
-        for (int j = 0; j < data.length(); j++)
-            q.bindValue(j, data[j]);
+        for (int i = 0; i < numData; i++)
+            q.bindValue(i, data[i]);
         q.exec();
     }
     else if (id == testID) {
@@ -347,12 +339,12 @@ void DatabaseMenu::addEntry()
 
         // Form and execute query for 'tolerances' table
         insertQuery.append(" tolerances (" + toleranceFields.join(", ") + ") VALUES (");
-        int i;
-        for (i = 0; i < toleranceFields.length() - 1; i++)
+        const int numTolerances = toleranceFields.length();
+        for (int i = 0; i < numTolerances - 1; i++)
             insertQuery.append(":" + toleranceFields[i] + ", ");
-        insertQuery.append(":" + toleranceFields[i] + ");");
+        insertQuery.append(":" + toleranceFields[numTolerances - 1] + ");");
         q.prepare(insertQuery);
-        for (i = 0; i < toleranceFields.length(); i++)
+        for (int i = 0; i < numTolerances; i++)
             q.bindValue(i, data[i]);
         q.exec();
 
@@ -362,18 +354,19 @@ void DatabaseMenu::addEntry()
         const int toleranceID = q.value(0).toInt();
 
         // Form query for 'tensile' table
+        const int numTensiles = tensileFields.length();
         insertQuery = "INSERT INTO tensile (" + tensileFields.join(", ") + ")" + "VALUES (";
-        for (i = 0; i < tensileFields.length() - 1; i++)
+        for (int i = 0; i < numTensiles - 1; i++)
             insertQuery.append(":" + tensileFields[i] + ", ");
-        insertQuery.append(":" + tensileFields[i] + ");");
+        insertQuery.append(":" + tensileFields[numTensiles - 1] + ");");
         q.prepare(insertQuery);
 
         // Gather tensile data and execute a query for each coupon
         QVector<QStringList> tensiles;
         const int tensileOffset = tensileFields.length() - NUM_TENSILE_TESTS;
-        for (i = toleranceFields.length(); i < data.length(); i++)
+        for (int i = numTolerances; i < data.length(); i++)
             tensiles.append(data[i].split(", "));
-        for (i = 0; i < NUM_COUPONS; i++) {
+        for (int i = 0; i < NUM_COUPONS; i++) {
             q.bindValue(0, toleranceID);
             q.bindValue(1, i + 1);
             for (int j = 0; j < NUM_TENSILE_TESTS; j++)
@@ -399,50 +392,20 @@ void DatabaseMenu::onRowIDClicked(int rowNum)
         return;
     }
 
-    // Main layout for dialog with title
-    QVBoxLayout* layout = new QVBoxLayout;
-    layout->setSpacing(20);
-    QLabel* header = new QLabel("Row " + QString::number(rowNum + 1) + " data");
-    QFont headerFont("Futura", 20, QFont::Medium);
-    headerFont.setUnderline(true);
-    header->setFont(headerFont);
-    header->setStyleSheet("QLabel { color: rgb(201, 21, 58); }");
-    layout->addWidget(header);
+    // Create a modeless dialog with the data for the row
+    EntryView* rowDialog = new EntryView(id, rowNum, getLabels(id), queryModel->record(rowNum), this);
+    rowDialog->setAttribute(Qt::WA_DeleteOnClose);
+    rowDialog->setWindowTitle("View data");
+    rowDialog->show();
+    rowDialog->raise();
+    rowDialog->activateWindow();
+}
 
-    // Grid layout with pairs of labels and values
-    QGridLayout* gridLayout = new QGridLayout;
-    layout->addLayout(gridLayout);
-    gridLayout->setHorizontalSpacing(20);
-    gridLayout->setVerticalSpacing(10);
-    QVector<DatabaseColumn> columns = DBColumns[id];
-    QSqlRecord row = queryModel->record(rowNum);
-    QVector<QString> labels;
-    for (int i = 0; i < columns.size(); i++)
-        labels.append(columns[i].label);
-    labels.removeAll("");
-
-    for (int i = 0; i < row.count() - 1; i++) {
-        QVariant value = row.field(i + 1).value();
-        QString field = value.toString();
-        QLabel* fieldLabel = new QLabel(labels[i]);
-        fieldLabel->setFont(QFont("Avenir", 14, QFont::Bold));
-        gridLayout->addWidget(fieldLabel, i / 2, (2 * i) % 4);
-        QLabel* fieldText = new QLabel(field);
-        fieldText->setStyleSheet("QLabel { border: 3px solid rgb(0, 135, 200); "
-                                  "border-radius: 4px; padding: 5px; "
-                                  "background-color: rgb(230, 230, 230);"
-                                  "font-weight: 14; }");
-        fieldText->setAlignment(Qt::AlignCenter);
-        fieldText->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        fieldText->setWordWrap(true);
-        gridLayout->addWidget(fieldText, i / 2, ((2 * i) + 1) % 4);
-    }
-
-    // Create a modeless dialog with the constructed layout
-    QDialog* showData = new QDialog(this);
-    showData->setAttribute(Qt::WA_DeleteOnClose);
-    showData->setLayout(layout);
-    showData->show();
-    showData->raise();
-    showData->activateWindow();
+QVector<QString> DatabaseMenu::getLabels(int dataID)
+{
+    QVector<QString> fieldNames;
+    foreach(const DatabaseColumn& column, DBColumns[dataID])
+        fieldNames.append(column.label);
+    fieldNames.removeAll("");
+    return fieldNames;
 }

@@ -3,10 +3,13 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-DataEntry::DataEntry(const QStringList& labels, QWidget *parent, Qt::WindowFlags f)
-    : QDialog(parent, f), labels(labels)
+DataEntry::DataEntry(QStringList labels, QWidget *parent, Qt::WindowFlags f)
+    : QDialog(parent, f), fieldLabels(labels)
 {
     // Add colons in front of the labels
+    const int numLabels = labels.length();
+    for (int i = 0; i < numLabels; i++)
+        fieldLabels[i].append(":");
 
     // Title widget
     title = new QLabel("Enter data:");
