@@ -1,4 +1,5 @@
 #include "dataEntryFactory.h"
+#include "databaseColumn.h"
 #include "printEntry.h"
 #include "testEntry.h"
 #include "defectEntry.h"
@@ -6,24 +7,16 @@
 #include <QFile>
 #include <QTextStream>
 
-DataEntry* DataEntryFactory::createDataEntry(int type, const QVector<QVector<DatabaseColumn>>& DBColumns, QWidget* parent)
+DataEntry* DataEntryFactory::createDataEntry(int type, const QVector<DatabaseColumn*>& DBColumns, QWidget* parent)
 {
-    // Get the labels for the category of data and remove any empty ones
-    QStringList labels;
-    const QVector<DatabaseColumn>& columns = DBColumns[type];
-    foreach(const DatabaseColumn& column, columns) {
-        labels.append(column.label);
-    }
-    labels.removeAll("");
-
     // Return the appropiate type of data entry dialog
     switch (type) {
     case printID:
-        return new PrintEntry(labels, parent);
+        return new PrintEntry(DBColumns, parent);
     case testID:
-        return new TestEntry(labels, parent);
+        return new TestEntry(DBColumns, parent);
     case defectID:
-        return new DefectEntry(labels, parent);
+        return new DefectEntry(DBColumns, parent);
     default:
         return nullptr;
     }

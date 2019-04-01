@@ -1,15 +1,16 @@
 #include "dataEntry.h"
+#include "databaseColumn.h"
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
 
-DataEntry::DataEntry(QStringList labels, QWidget *parent, Qt::WindowFlags f)
-    : QDialog(parent, f), fieldLabels(labels)
+DataEntry::DataEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget *parent, Qt::WindowFlags f)
+    : QDialog(parent, f), columns(DBColumns)
 {
-    // Add colons in front of the labels
-    const int numLabels = labels.length();
-    for (int i = 0; i < numLabels; i++)
-        fieldLabels[i].append(":");
+    // Remove columns with blank labels
+    foreach(DatabaseColumn* column, columns)
+        if (column->label.isEmpty())
+            columns.removeOne(column);
 
     // Title widget
     title = new QLabel("Enter data:");

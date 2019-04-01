@@ -3,6 +3,7 @@
 
 #include <QDialog>
 
+class DatabaseColumn;
 class QLabel;
 
 // Dialog abstract base class for adding new records to the database
@@ -10,12 +11,12 @@ class DataEntry : public QDialog
 {
     Q_OBJECT
 public:
-    DataEntry(QStringList, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+    explicit DataEntry(const QVector<DatabaseColumn*>&, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
     virtual ~DataEntry();
     virtual QStringList getData() const = 0;
 
 protected:
-    QStringList fieldLabels;
+    QVector<DatabaseColumn*> columns;
 
 private:
     QLabel* title;

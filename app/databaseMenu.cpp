@@ -1,4 +1,5 @@
 #include "databaseMenu.h"
+#include "databaseColumn.h"
 #include "dataEntryFactory.h"
 #include "dataEntry.h"
 #include "entryView.h"
@@ -280,7 +281,7 @@ void DatabaseMenu::openDataDialog()
         selectDataDialog.exec();
         return;
     }
-    recordDialog = DataEntryFactory::createDataEntry(id, DBColumns, this);
+    recordDialog = DataEntryFactory::createDataEntry(id, DBColumns[id], this);
     connect(recordDialog, SIGNAL(accepted()), this, SLOT(addEntry()));
     recordDialog->open();
 }
@@ -293,10 +294,11 @@ void DatabaseMenu::setDBColumns()
         fieldsFile.open(QFile::ReadOnly | QFile::Text);
         QTextStream inFields(&fieldsFile);
         QStringList fieldsLine;
-        QVector<DatabaseColumn> columns;
+        QVector<DatabaseColumn*> columns;
+        inFields.readLine();
         while (!inFields.atEnd()) {
-            fieldsLine = inFields.readLine().split(",");
-            columns.append( {fieldsLine[0], fieldsLine[1]} );
+            QString fieldsLine = inFields.readLine();
+            columns.append(new DatabaseColumn(fieldsLine, this));
         }
         DBColumns.append(columns);
         fieldsFile.close();
@@ -309,11 +311,11 @@ void DatabaseMenu::addEntry()
     const QStringList& data = recordDialog->getData();
     const int numData = data.length();
     const int id = radioGroup->checkedId();
-    const QVector<DatabaseColumn>& columns = DBColumns[id];
+    const QVector<DatabaseColumn*>& columns = DBColumns[id];
     QStringList fields;
     fields.reserve(columns.size());
-    foreach(const DatabaseColumn& column, columns)
-        fields.append(column.field);
+    foreach(const DatabaseColumn* column, columns)
+        fields.append(column->field);
     const int numFields = fields.length();
 
     // Formulate and execute queries
@@ -328,7 +330,7 @@ void DatabaseMenu::addEntry()
         insertQuery.append(":" + fields[numFields - 1] + ");");
         q.prepare(insertQuery);
         for (int i = 0; i < numData; i++)
-            q.bindValue(i, data[i]);
+            q.bindValue(i, data[i].isEmpty() ? QVariant(QVariant::String) : data[i]);
         q.exec();
     }
     else if (id == testID) {
@@ -345,7 +347,7 @@ void DatabaseMenu::addEntry()
         insertQuery.append(":" + toleranceFields[numTolerances - 1] + ");");
         q.prepare(insertQuery);
         for (int i = 0; i < numTolerances; i++)
-            q.bindValue(i, data[i]);
+            q.bindValue(i, data[i].isEmpty() ? QVariant(QVariant::String) : data[i]);
         q.exec();
 
         // Get the tolerance ID from the previous insertion
@@ -404,8 +406,8 @@ void DatabaseMenu::onRowIDClicked(int rowNum)
 QVector<QString> DatabaseMenu::getLabels(int dataID)
 {
     QVector<QString> fieldNames;
-    foreach(const DatabaseColumn& column, DBColumns[dataID])
-        fieldNames.append(column.label);
+    foreach(const DatabaseColumn* column, DBColumns[dataID])
+        fieldNames.append(column->label);
     fieldNames.removeAll("");
     return fieldNames;
 }

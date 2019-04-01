@@ -2,8 +2,8 @@
 #define DATABASEMENU_H
 
 #include <QWidget>
+#include "databaseColumn.h"
 
-struct DatabaseColumn;
 class QSqlQueryModel;
 class QTableView;
 class QLabel;
@@ -22,7 +22,7 @@ public:
     ~DatabaseMenu();
 
 private:
-    QVector<QVector<DatabaseColumn>> DBColumns;
+    QVector<QVector<DatabaseColumn*>> DBColumns;
     QSqlQueryModel* queryModel;
     QTableView* table;
     QButtonGroup* radioGroup;

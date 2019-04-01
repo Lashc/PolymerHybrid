@@ -4,13 +4,13 @@
 #include <QWidget>
 
 class DataEntry;
-struct DatabaseColumn;
+class DatabaseColumn;
 
 // Factory for creating dialogs for adding records to the database
 class DataEntryFactory
 {
 public:
-    static DataEntry* createDataEntry(int, const QVector<QVector<DatabaseColumn>>&, QWidget* parent = nullptr);
+    static DataEntry* createDataEntry(int, const QVector<DatabaseColumn*>&, QWidget* parent = nullptr);
 };
 
 #endif // DATAENTRYFACTORY_H

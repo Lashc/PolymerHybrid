@@ -1,12 +1,13 @@
-print_id,Print ID,
-height,Height (in)
-width,Width (in)
-bead_width,Bead width (in)
-cross_image,Cross-sectional image filename
-tolerance_id,
-coupon,
-ultimate,Ultimate tensile strength (MPa)
-percent_elongation,Percent elongation (%)
-yield,Yield strength (MPa)
-modulus_elasticity,Modulus of elasticity (GPa)
-cross_area,Cross sectional area (in^2)
+FieldName,          Label,                           Required,  ValidatorType,  ValidatorArgs
+print_id,           Print ID,                        true,      foreign_key
+height,             Height (in),                     true,      double,         0.001
+width,              Width (in),                      true,      double,         0.001
+bead_width,         Bead width (in),                 true,      double,         0.001
+cross_image,        Cross-sectional image filename,  true,      file
+tolerance_id,       ,                                true,      foreign_key
+coupon,             ,                                true,      int,            1, 12
+ultimate,           Ultimate tensile strength (MPa), true,      double
+percent_elongation, Percent elongation (%),          true,      double
+yield,              Yield strength (MPa),            true,      double
+modulus_elasticity, Modulus of elasticity (GPa),     true,      double
+cross_area,         Cross sectional area (in^2),     true,      dobule

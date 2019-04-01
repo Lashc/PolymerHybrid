@@ -1,21 +1,22 @@
-description,Description
-date,Date (YYYY-MM-DD)
-spindle_speed,Spindle speed (RPM)
-feed_rate,Feed rate (IPM)
-layer_height,Layer height (in)
-rapids,Rapid %
-nozzle_temp,Nozzle temperature (°C)
-bed_temp,Bed temperature (°C)
-dryer_temp,Dryer temperature (°C)
-ambient_temp,Ambient temperature (°C)
-humidity,Humidity (%)
-surface_finish,Surface finish (in)
-cycle_time,Cycle time (hh:mm:ss)
-layer_time,Layer time (hh:mm:ss)
-experiment,Experiment
-dry_time,Drying time (hh:mm:ss)
-setup_time,Setup time (hh:mm:ss)
-shutdown_time,Shut down time (hh:mm:ss)
-transition_time,Transition time (hh:mm:ss)
-video,Video filename
-notes,Notes
+FieldName,          Label,                      Required,   ValidatorType,  ValidatorArgs
+description,        Description,                true,       text,           127
+date,               Date (YYYY-MM-DD),          true,       date
+spindle_speed,      Spindle speed (RPM),        true,       double,         0.001
+feed_rate,          Feed rate (IPM),            true,       double,         0.001
+layer_height,       Layer height (in),          true,       double,         0.0001
+rapids,             Rapid %,                    true,       int,            1
+nozzle_temp,        Nozzle temperature (°C),    true,       double,         0.0
+bed_temp,           Bed temperature (°C),       true,       double,         0.0, 232.0
+dryer_temp,         Dryer temperature (°C),     true,       double,         0.0
+ambient_temp,       Ambient temperature (°C),   true,       double,         0.0
+humidity,           Humidity (%),               false,      int,            0, 100
+surface_finish,     Surface finish (in),        false,      double,         0.0
+cycle_time,         Cycle time (hh:mm:ss),      false,      time
+layer_time,         Layer time (hh:mm:ss),      false,      time
+experiment,         Experiment,                 false,      int,            0
+dry_time,           Drying time (hh:mm:ss),     false,      time
+setup_time,         Setup time (hh:mm:ss),      false,      time
+shutdown_time,      Shut down time (hh:mm:ss),  false,      time
+transition_time,    Transition time (hh:mm:ss), false,      time
+video,              Video filename,             false,      file,           255
+notes,              Notes,                      false,      text,           1023

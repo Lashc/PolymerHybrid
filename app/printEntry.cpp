@@ -1,18 +1,22 @@
 #include "printEntry.h"
+#include "databaseColumn.h"
 #include <QLineEdit>
 #include <QTextEdit>
 #include <QGridLayout>
 #include <QLabel>
 
-PrintEntry::PrintEntry(QStringList labels, QWidget* parent)
-    : DataEntry(labels, parent)
+PrintEntry::PrintEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* parent)
+    : DataEntry(DBColumns, parent)
 {
     // Add labels and line edits to a grid layout
     QGridLayout* lineEditLayout = new QGridLayout;
-    const int numLabels = fieldLabels.length();
-    for (int i = 0; i < numLabels - 1; i++) {
-        lineEditLayout->addWidget(new QLabel(fieldLabels[i]), i / 2, (2 * i) % 4);
+    const int numColumns = columns.length();
+    for (int i = 0; i < numColumns - 1; i++) {
+        const DatabaseColumn* column = columns[i];
+        lineEditLayout->addWidget(new QLabel(column->label + ":"), i / 2, (2 * i) % 4);
         QLineEdit* input = new QLineEdit;
+        if (column->validator)
+            input->setValidator(column->validator);
         lineEdits.append(input);
         lineEditLayout->addWidget(input, i / 2, ((2 * i) + 1) % 4);
     }
@@ -20,7 +24,7 @@ PrintEntry::PrintEntry(QStringList labels, QWidget* parent)
     // Layout for writing notes
     QHBoxLayout* notesLayout = new QHBoxLayout;
     notes = new QTextEdit;
-    notesLayout->addWidget(new QLabel(fieldLabels[numLabels - 1]));
+    notesLayout->addWidget(new QLabel(columns[numColumns - 1]->label + ":"));
     notesLayout->addWidget(notes);
     notesLayout->setSpacing(30);
 
@@ -33,8 +37,12 @@ PrintEntry::PrintEntry(QStringList labels, QWidget* parent)
 QStringList PrintEntry::getData() const
 {
     QStringList data;
-    foreach(const QLineEdit* input, lineEdits)
-        data.append(input->text());
+    foreach(const QLineEdit* input, lineEdits) {
+        if (!input->hasAcceptableInput() && !input->text().isEmpty())
+            return QStringList();
+        else
+            data.append(input->text());
+    }
     data.append(notes->toPlainText());
     return data;
 }

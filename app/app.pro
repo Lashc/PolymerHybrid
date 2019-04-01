@@ -34,7 +34,9 @@ SOURCES += \
     defectEntry.cpp \
     dataEntryFactory.cpp \
     testEntry.cpp \
-    entryView.cpp
+    entryView.cpp \
+    databaseColumn.cpp \
+    dateValidator.cpp
 
 HEADERS += \
         control.h \
@@ -46,7 +48,9 @@ HEADERS += \
     dataEntryFactory.h \
     testEntry.h \
     types.h \
-    entryView.h
+    entryView.h \
+    databaseColumn.h \
+    dateValidator.h
 
 FORMS += \
         control.ui
