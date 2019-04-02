@@ -133,7 +133,7 @@ QSqlError DatabaseMenu::createTables()
     // Prints table
     createTable = "CREATE TABLE prints ("
                   "id INTEGER PRIMARY KEY,"
-                  "description VARCHAR(127) NOT NULL,"
+                  "description VARCHAR(100) NOT NULL,"
                   "date CHAR(10) NOT NULL,"
                   "spindle_speed REAL NOT NULL CHECK(spindle_speed > 0),"
                   "feed_rate REAL NOT NULL CHECK(feed_rate > 0),"
@@ -153,7 +153,7 @@ QSqlError DatabaseMenu::createTables()
                   "shutdown_time CHAR(8),"
                   "transition_time CHAR(8),"
                   "video VARCHAR(255),"
-                  "notes VARCHAR(1023));";
+                  "notes VARCHAR(1000));";
     if (!query.exec(createTable))
         return query.lastError();
 
@@ -170,7 +170,7 @@ QSqlError DatabaseMenu::createTables()
         return query.lastError();
 
     // Tensile tests table
-    createTable = "CREATE TABLE tensile ("
+    createTable = "CREATE TABLE tensiles ("
                   "id INTEGER PRIMARY KEY,"
                   "tolerance_id INTEGER,"
                   "coupon TINYINT CHECK(coupon >= 1 AND coupon <= 12),"
@@ -188,7 +188,7 @@ QSqlError DatabaseMenu::createTables()
     createTable = "CREATE TABLE defects ("
                   "id INTEGER PRIMARY KEY,"
                   "print_id INTEGER UNIQUE,"
-                  "description VARCHAR(1023) NOT NULL,"
+                  "description VARCHAR(1000) NOT NULL,"
                   "FOREIGN KEY(print_id) REFERENCES prints(id));";
     query.exec(createTable);
     return query.lastError();
@@ -214,15 +214,15 @@ void DatabaseMenu::changeTable(int id)
         // Set the query
         queryModel->setQuery("SELECT P.*, T.height, T.width, T.bead_width, T.cross_image,"
                              "(SELECT GROUP_CONCAT(ultimate, \", \") FROM "
-                                 "(SELECT TE.ultimate FROM tensile TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
+                                 "(SELECT TE.ultimate FROM tensiles TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
                              "(SELECT GROUP_CONCAT(percent_elongation, \", \") FROM "
-                                 "(SELECT TE.percent_elongation FROM tensile TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
+                                 "(SELECT TE.percent_elongation FROM tensiles TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
                              "(SELECT GROUP_CONCAT(yield, \", \") FROM "
-                                 "(SELECT TE.yield FROM tensile TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
+                                 "(SELECT TE.yield FROM tensiles TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
                              "(SELECT GROUP_CONCAT(modulus_elasticity, \", \") FROM "
-                                 "(SELECT TE.modulus_elasticity FROM tensile TE WHERE tolerance_id = T.id ORDER BY TE.coupon)),"
+                                 "(SELECT TE.modulus_elasticity FROM tensiles TE WHERE tolerance_id = T.id ORDER BY TE.coupon)),"
                              "(SELECT GROUP_CONCAT(cross_area, \", \") FROM "
-                                 "(SELECT TE.cross_area FROM tensile TE WHERE tolerance_id = T.id ORDER BY TE.coupon)),"
+                                 "(SELECT TE.cross_area FROM tensiles TE WHERE tolerance_id = T.id ORDER BY TE.coupon)),"
                              "D.description "
                              "FROM prints P "
                              "LEFT JOIN tolerances T ON P.id=T.print_id "
@@ -244,15 +244,15 @@ void DatabaseMenu::changeTable(int id)
         else if (id == testID) {
             query = "SELECT T.*,"
                     "(SELECT GROUP_CONCAT(ultimate, \", \") FROM "
-                        "(SELECT TE.ultimate FROM tensile TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
+                        "(SELECT TE.ultimate FROM tensiles TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
                     "(SELECT GROUP_CONCAT(percent_elongation, \", \") FROM "
-                        "(SELECT TE.percent_elongation FROM tensile TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
+                        "(SELECT TE.percent_elongation FROM tensiles TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
                     "(SELECT GROUP_CONCAT(yield, \", \") FROM "
-                        "(SELECT TE.yield FROM tensile TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
+                        "(SELECT TE.yield FROM tensiles TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
                     "(SELECT GROUP_CONCAT(modulus_elasticity, \", \") FROM "
-                        "(SELECT TE.modulus_elasticity FROM tensile TE WHERE tolerance_id = T.id ORDER BY TE.coupon)),"
+                        "(SELECT TE.modulus_elasticity FROM tensiles TE WHERE tolerance_id = T.id ORDER BY TE.coupon)),"
                     "(SELECT GROUP_CONCAT(cross_area, \", \") FROM "
-                        "(SELECT TE.cross_area FROM tensile TE WHERE tolerance_id = T.id ORDER BY TE.coupon)) "
+                        "(SELECT TE.cross_area FROM tensiles TE WHERE tolerance_id = T.id ORDER BY TE.coupon)) "
                     "FROM tolerances T;";
             const int numLabels = labels.length();
             for (int i = numLabels - NUM_TENSILE_TESTS; i < numLabels; i++)
@@ -289,6 +289,8 @@ void DatabaseMenu::openDataDialog()
 void DatabaseMenu::setDBColumns()
 {
     QVector<QString> fieldsFiles( {":/print_fields.rtf", ":/test_fields.rtf", ":/defect_fields.rtf"} );
+    QVector<QString> tableNames( {"prints", "tolerances", "tensiles", "defects"} );
+    bool reachedTensiles = false;
     for (int i = printID; i <= defectID; i++) {
         QFile fieldsFile(fieldsFiles[i]);
         fieldsFile.open(QFile::ReadOnly | QFile::Text);
@@ -298,7 +300,9 @@ void DatabaseMenu::setDBColumns()
         inFields.readLine();
         while (!inFields.atEnd()) {
             QString fieldsLine = inFields.readLine();
-            columns.append(new DatabaseColumn(fieldsLine, this));
+            if (i == testID && fieldsLine.contains("tolerance_id"))
+                reachedTensiles = true;
+            columns.append(new DatabaseColumn(tableNames[i + reachedTensiles], fieldsLine, this));
         }
         DBColumns.append(columns);
         fieldsFile.close();
@@ -327,7 +331,7 @@ void DatabaseMenu::addEntry()
         insertQuery.append(table + " (" + fields.join(", ") + ") VALUES (");
         for (int i = 0; i < numFields - 1; i++)
             insertQuery.append(":" + fields[i] + ", ");
-        insertQuery.append(":" + fields[numFields - 1] + ");");
+        insertQuery.append(":" + fields.last() + ");");
         q.prepare(insertQuery);
         for (int i = 0; i < numData; i++)
             q.bindValue(i, data[i].isEmpty() ? QVariant(QVariant::String) : data[i]);
@@ -355,9 +359,9 @@ void DatabaseMenu::addEntry()
         q.first();
         const int toleranceID = q.value(0).toInt();
 
-        // Form query for 'tensile' table
+        // Form query for 'tensiles' table
         const int numTensiles = tensileFields.length();
-        insertQuery = "INSERT INTO tensile (" + tensileFields.join(", ") + ")" + "VALUES (";
+        insertQuery = "INSERT INTO tensiles (" + tensileFields.join(", ") + ")" + "VALUES (";
         for (int i = 0; i < numTensiles - 1; i++)
             insertQuery.append(":" + tensileFields[i] + ", ");
         insertQuery.append(":" + tensileFields[numTensiles - 1] + ");");
@@ -365,14 +369,14 @@ void DatabaseMenu::addEntry()
 
         // Gather tensile data and execute a query for each coupon
         QVector<QStringList> tensiles;
-        const int tensileOffset = tensileFields.length() - NUM_TENSILE_TESTS;
         for (int i = numTolerances; i < data.length(); i++)
             tensiles.append(data[i].split(", "));
         for (int i = 0; i < NUM_COUPONS; i++) {
             q.bindValue(0, toleranceID);
             q.bindValue(1, i + 1);
-            for (int j = 0; j < NUM_TENSILE_TESTS; j++)
-                q.bindValue(j + tensileOffset, tensiles[i][j]);
+            for (int j = 0; j < NUM_TENSILE_TESTS; j++) {
+                q.bindValue(j + 2, tensiles[i][j].isEmpty() ? QVariant(QVariant::String) : tensiles[i][j]);
+            }
             q.exec();
         }
     }

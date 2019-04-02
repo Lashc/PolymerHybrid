@@ -5,6 +5,7 @@
 #include <QTabWidget>
 #include <QLabel>
 #include <QGridLayout>
+#include <QMessageBox>
 
 TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* parent)
     : DataEntry(DBColumns, parent)
@@ -24,6 +25,11 @@ TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* parent)
         QLineEdit* input = new QLineEdit;
         if (column->validator)
             input->setValidator(column->validator);
+        if (column->validatorType == "file")
+            input->setMaxLength(column->validatorArgs[0].toInt());
+        if (column->required)
+            input->setStyleSheet("border: 2px solid rgb(201, 21, 58);"
+                                 "border-radius: 2px;");
         toleranceLineEdits.append(input);
         toleranceLayout->addWidget(input, i / 2, ((2 * i) + 1) % 4);
     }
@@ -32,22 +38,23 @@ TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* parent)
 
     // Create tensile test tabs for coupons with labels and line edits in grid layouts
     QVector<QString> tensileLabels;
-    QVector<QValidator*> tensileValidators;
-    for (int i = numToleranceInputs; i < numColumns; i++) {
+    for (int i = numToleranceInputs; i < numColumns; i++)
         tensileLabels.append(columns[i]->label);
-        tensileValidators.append(columns[i]->validator);
-    }
     for (int i = 0; i < NUM_COUPONS; i++) {
         QWidget* couponTab = new QWidget;
         QVector<QLineEdit *> lineEdits;
         QGridLayout* couponLayout = new QGridLayout;
-        for (int i = 0; i < NUM_TENSILE_TESTS; i++) {
-            couponLayout->addWidget(new QLabel(tensileLabels[i] + ":"), i / 2, (2 * i) % 4);
+        for (int j = 0; j < NUM_TENSILE_TESTS; j++) {
+            const DatabaseColumn* column = columns[numToleranceInputs + j];
+            couponLayout->addWidget(new QLabel(tensileLabels[j] + ":"), j / 2, (2 * j) % 4);
             QLineEdit* input = new QLineEdit;
-            if (tensileValidators[i])
-                input->setValidator(tensileValidators[i]);
+            if (column->validator)
+                input->setValidator(column->validator);
+            if (column->required)
+                input->setStyleSheet("border: 2px solid rgb(201, 21, 58);"
+                                     "border-radius: 2px;");
             lineEdits.append(input);
-            couponLayout->addWidget(input, i / 2, ((2 * i) + 1) % 4);
+            couponLayout->addWidget(input, j / 2, ((2 * j) + 1) % 4);
         }
         couponLineEdits.append(lineEdits);
         couponTab->setLayout(couponLayout);
@@ -63,17 +70,58 @@ TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* parent)
 QStringList TestEntry::getData() const
 {
     QStringList data;
-    foreach(const QLineEdit* tolerInput, toleranceLineEdits) {
-        if (tolerInput->hasAcceptableInput())
-            data.append(tolerInput->text());
-        else
-            return QStringList();
-    }
-    foreach(const QVector<QLineEdit *>& couponTensileList, couponLineEdits) {
+    foreach(const QLineEdit* tolerInput, toleranceLineEdits)
+        data.append(tolerInput->text());
+    foreach(const QVector<QLineEdit*>& couponInputs, couponLineEdits) {
         QStringList tensileList;
-        foreach(const QLineEdit* tensileInput, couponTensileList)
-            data.append(tensileInput->text());
+        foreach(const QLineEdit* tensileInput, couponInputs)
+            tensileList.append(tensileInput->text());
         data.append(tensileList.join(", "));
     }
     return data;
+}
+
+void TestEntry::validateData()
+{
+    const int numToleranceInputs = toleranceLineEdits.length();
+    QVector<bool> validTolerances(numToleranceInputs, true);
+    int numErrors = 0;
+    for (int i = 0; i < numToleranceInputs; i++) {
+        const QLineEdit* tolerInput = toleranceLineEdits[i];
+        if ((columns[i]->required && tolerInput->text().isEmpty()) ||
+            (!tolerInput->text().isEmpty() && !tolerInput->hasAcceptableInput())) {
+                validTolerances[i] = false;
+                numErrors++;
+        }
+    }
+
+    const int numTensiles = couponLineEdits[0].length();
+    const int numCoupons = couponLineEdits.length();
+    const int tensileOffset = columns.length() - numTensiles;
+    QVector<bool> validCoupons(numCoupons, true);
+    for (int i = 0; i < numCoupons; i++) {
+        for (int j = 0; j < numTensiles; j++) {
+            const QLineEdit* tensileInput = couponLineEdits[i][j];
+            if ((columns[tensileOffset + j]->required && tensileInput->text().isEmpty()) ||
+                (!tensileInput->text().isEmpty() && !tensileInput->hasAcceptableInput()))
+                    validCoupons[i] = false;
+        }
+        if (!validCoupons[i])
+            numErrors++;
+    }
+
+    if (numErrors) {
+        QString invalidInputs;
+        for (int i = 0; i < numToleranceInputs; i++)
+            if(!validTolerances[i])
+                invalidInputs.append("* " + columns[i]->label + " has invalid input\n");
+        for (int i = 0; i < numCoupons; i++)
+            if (!validCoupons[i])
+                invalidInputs.append("* Coupon " + QString::number(i + 1) + " has invalid input\n");
+        invalidInputs.prepend(QString::number(numErrors) + (numErrors == 1 ? " error: \n\n" : " errors:\n\n"));
+        QMessageBox errorDialog(QMessageBox::Warning, "Invalid input", invalidInputs, QMessageBox::Ok);
+        errorDialog.exec();
+    }
+    else
+        accept();
 }

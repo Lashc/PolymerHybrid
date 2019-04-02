@@ -36,7 +36,8 @@ SOURCES += \
     testEntry.cpp \
     entryView.cpp \
     databaseColumn.cpp \
-    dateValidator.cpp
+    dateValidator.cpp \
+    foreignKeyValidator.cpp
 
 HEADERS += \
         control.h \
@@ -50,7 +51,8 @@ HEADERS += \
     types.h \
     entryView.h \
     databaseColumn.h \
-    dateValidator.h
+    dateValidator.h \
+    foreignKeyValidator.h
 
 FORMS += \
         control.ui

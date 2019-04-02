@@ -16,6 +16,9 @@ public:
 private:
     QVector<QLineEdit *> toleranceLineEdits;
     QVector<QVector<QLineEdit *>> couponLineEdits;
+
+public slots:
+    void validateData() override;
 };
 
 #endif // TESTENTRY_H

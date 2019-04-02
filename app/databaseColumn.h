@@ -10,14 +10,17 @@ class DatabaseColumn : public QObject
 {
     Q_OBJECT
 public:
-    explicit DatabaseColumn(QString, QObject *parent = nullptr);
+    explicit DatabaseColumn(const QString&, const QString&, QObject *parent = nullptr);
 
 private:
 public:
+    QString table;
     QString field;
     QString label;
     bool required;
+    QString validatorType;
     QValidator* validator;
+    QStringList validatorArgs;
 
 signals:
 

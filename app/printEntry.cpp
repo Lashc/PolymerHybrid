@@ -4,6 +4,8 @@
 #include <QTextEdit>
 #include <QGridLayout>
 #include <QLabel>
+#include <QValidator>
+#include <QMessageBox>
 
 PrintEntry::PrintEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* parent)
     : DataEntry(DBColumns, parent)
@@ -17,6 +19,11 @@ PrintEntry::PrintEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* paren
         QLineEdit* input = new QLineEdit;
         if (column->validator)
             input->setValidator(column->validator);
+        if (column->validatorType == "text" || column->validatorType == "file")
+            input->setMaxLength(column->validatorArgs[0].toInt());
+        if (column->required)
+            input->setStyleSheet("border: 2px solid rgb(201, 21, 58);"
+                                 "border-radius: 2px;");
         lineEdits.append(input);
         lineEditLayout->addWidget(input, i / 2, ((2 * i) + 1) % 4);
     }
@@ -24,7 +31,7 @@ PrintEntry::PrintEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* paren
     // Layout for writing notes
     QHBoxLayout* notesLayout = new QHBoxLayout;
     notes = new QTextEdit;
-    notesLayout->addWidget(new QLabel(columns[numColumns - 1]->label + ":"));
+    notesLayout->addWidget(new QLabel(columns.last()->label + ":"));
     notesLayout->addWidget(notes);
     notesLayout->setSpacing(30);
 
@@ -37,12 +44,38 @@ PrintEntry::PrintEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* paren
 QStringList PrintEntry::getData() const
 {
     QStringList data;
-    foreach(const QLineEdit* input, lineEdits) {
-        if (!input->hasAcceptableInput() && !input->text().isEmpty())
-            return QStringList();
-        else
-            data.append(input->text());
-    }
+    foreach(const QLineEdit* input, lineEdits)
+        data.append(input->text());
     data.append(notes->toPlainText());
+    QString invalidInputs;
     return data;
+}
+
+void PrintEntry::validateData()
+{
+    const int numLineEdits = lineEdits.size();
+    QVector<bool> valid(numLineEdits + 1, true);
+    int numErrors = 0;
+    for (int i = 0; i < numLineEdits; i++) {
+        const QLineEdit* input = lineEdits[i];
+        if ((columns[i]->required && input->text().isEmpty()) ||
+            (!input->text().isEmpty() && !input->hasAcceptableInput())) {
+                valid[i] = false;
+                numErrors++;
+        }
+    }
+    const int maxNotesLength = columns.last()->validatorArgs[0].toInt();
+    if (notes->toPlainText().length() > maxNotesLength)
+        valid.last() = false;
+    if (numErrors) {
+        QString invalidInputs;
+        for (int i = 0; i < numLineEdits + 1; i++)
+            if(!valid[i])
+                invalidInputs.append("* " + columns[i]->label + " has invalid input\n");
+        invalidInputs.prepend(QString::number(numErrors) + (numErrors == 1 ? " error: \n\n" : " errors:\n\n"));
+        QMessageBox errorDialog(QMessageBox::Warning, "Invalid input", invalidInputs, QMessageBox::Ok);
+        errorDialog.exec();
+    }
+    else
+        accept();
 }

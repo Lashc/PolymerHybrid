@@ -41,7 +41,7 @@ DataEntry::DataEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget *parent,
     setLayout(layout);
 
     // Connect signals and slots for action buttons
-    connect(submitBtn, SIGNAL(released()), this, SLOT(accept()));
+    connect(submitBtn, SIGNAL(released()), this, SLOT(validateData()));
     connect(cancelBtn, SIGNAL(released()), this, SLOT(reject()));
 }
 

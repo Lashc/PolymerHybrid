@@ -17,6 +17,9 @@ public:
 private:
     QLineEdit* printIDEdit;
     QTextEdit* descEdit;
+
+public slots:
+    void validateData() override;
 };
 
 #endif // DEFECTENTRY_H

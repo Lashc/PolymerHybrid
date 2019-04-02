@@ -17,6 +17,9 @@ public:
 private:
     QVector<QLineEdit *> lineEdits;
     QTextEdit* notes;
+
+public slots:
+    void validateData() override;
 };
 
 #endif // PRINTENTRY_H

@@ -22,6 +22,9 @@ private:
     QLabel* title;
     QPushButton* submitBtn;
     QPushButton* cancelBtn;
+
+public slots:
+    virtual void validateData() = 0;
 };
 
 #endif // DATAENTRY_H
