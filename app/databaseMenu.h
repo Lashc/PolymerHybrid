@@ -30,8 +30,10 @@ private:
     QRadioButton* testBtn;
     QRadioButton* defectBtn;
     QRadioButton* allBtn;
-    QPushButton* backBtn;
     QPushButton* addBtn;
+    QPushButton* modifyBtn;
+    QPushButton* deleteBtn;
+    QPushButton* backBtn;
     DataEntry* recordDialog;
 
     QSqlError initDB();
@@ -46,6 +48,7 @@ public slots:
     void changeTable(int);
     void openDataDialog();
     void addEntry();
+    void deleteEntry();
     void onRowIDClicked(int);
 };
 

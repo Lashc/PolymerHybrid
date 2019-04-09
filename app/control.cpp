@@ -24,6 +24,7 @@ Control::Control(QWidget *parent) : QWidget(parent)
     // Layout for application
     QVBoxLayout* layout = new QVBoxLayout;
     layout->addWidget(pages);
+    layout->setMargin(5);
     setLayout(layout);
 }
 

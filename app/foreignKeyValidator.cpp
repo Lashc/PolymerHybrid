@@ -30,7 +30,7 @@ QValidator::State ForeignKeyValidator::validate(QString& input, int& pos) const
     else if (table == "defects")
         foreignKeyField = "print_id";
     QSqlQuery foreignKeyTaken("SELECT " + foreignKeyField + " FROM " + table + " WHERE " + foreignKeyField + "=" + input + ";");
-    QSqlQuery foreignKeyExists("SELECT id FROM " + foreignTable + " WHERE id=" + input);
+    QSqlQuery foreignKeyExists("SELECT id FROM " + foreignTable + " WHERE id=" + input + ";");
     foreignKeyTaken.exec();
     foreignKeyExists.exec();
     bool isTaken = foreignKeyTaken.next();

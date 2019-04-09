@@ -17,6 +17,7 @@
 #include <QGroupBox>
 #include <QHeaderView>
 #include <QMessageBox>
+#include <QInputDialog>
 
 DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 {
@@ -73,28 +74,46 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     btnBox->setMinimumSize(250, 200);
     btnBox->setLayout(radioLayout);
 
-    // Layout for selecting data and adding entries
+    // Layout for selecting data and performing database operations
     QVBoxLayout* optionsLayout = new QVBoxLayout;
-    optionsLayout->addWidget(btnBox, 5);
+    optionsLayout->addWidget(btnBox, 4);
     optionsLayout->setSpacing(30);
 
-    // Insert spacing and create push button for adding new records into the database
-    optionsLayout->addStretch(2);
+    // Push buttons for adding, modifying, and deleting database entries
+    // and for returning to the main menu
+    QGridLayout* pushBtnLayout = new QGridLayout;
+    pushBtnLayout->setVerticalSpacing(50);
+    QSize pushBtnMinSize(150, 100);
+    QSizePolicy pushBtnSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum, QSizePolicy::PushButton);
+    QFont pushBtnFont("Gotham", 20, QFont::Medium);
+
     addBtn = new QPushButton("Add entry");
-    addBtn->setMinimumSize(200, 100);
-    addBtn->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred, QSizePolicy::PushButton));
-    addBtn->setFont(QFont("Gotham", 20, QFont::Medium));
-    optionsLayout->addWidget(addBtn, 2);
+    addBtn->setMinimumSize(pushBtnMinSize);
+    addBtn->setSizePolicy(pushBtnSizePolicy);
+    addBtn->setFont(pushBtnFont);
+    pushBtnLayout->addWidget(addBtn, 0, 0);
+    modifyBtn = new QPushButton("Modify entry");
+    modifyBtn->setMinimumSize(pushBtnMinSize);
+    modifyBtn->setSizePolicy(pushBtnSizePolicy);
+    modifyBtn->setFont(pushBtnFont);
+    pushBtnLayout->addWidget(modifyBtn, 0, 1);
+    deleteBtn = new QPushButton("Delete entry");
+    deleteBtn->setMinimumSize(pushBtnMinSize);
+    deleteBtn->setSizePolicy(pushBtnSizePolicy);
+    deleteBtn->setFont(pushBtnFont);
+    pushBtnLayout->addWidget(deleteBtn, 1, 0);
     backBtn = new QPushButton("Back");
-    backBtn->setMinimumSize(200, 100);
-    backBtn->setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred, QSizePolicy::PushButton));
-    backBtn->setFont(QFont("Gotham", 20, QFont::Medium));
-    optionsLayout->addWidget(backBtn, 2);
+    backBtn->setMinimumSize(pushBtnMinSize);
+    backBtn->setSizePolicy(pushBtnSizePolicy);
+    backBtn->setFont(pushBtnFont);
+    pushBtnLayout->addWidget(backBtn, 1, 1);
+    optionsLayout->addLayout(pushBtnLayout, 4);
 
     // Configure main layout
     QHBoxLayout* layout = new QHBoxLayout;
-    layout->addWidget(table, 5);
-    layout->addLayout(optionsLayout, 2);
+    layout->addWidget(table, 11);
+    layout->addLayout(optionsLayout, 5);
+    layout->setSpacing(25);
     setLayout(layout);
 
     // 'prints' table is default table selected
@@ -105,6 +124,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     connect(radioGroup, SIGNAL(buttonPressed(int)), this, SLOT(changeTable(int)));
     connect(addBtn, SIGNAL(released()), this, SLOT(openDataDialog()));
     connect(backBtn, SIGNAL(released()), this->parentWidget(), SLOT(returnToMainMenu()));
+    connect(deleteBtn, SIGNAL(released()), this, SLOT(deleteEntry()));
     connect(verticalHeader, SIGNAL(sectionClicked(int)), this, SLOT(onRowIDClicked(int)));
 }
 
@@ -132,64 +152,68 @@ QSqlError DatabaseMenu::createTables()
 
     // Prints table
     createTable = "CREATE TABLE prints ("
-                  "id INTEGER PRIMARY KEY,"
-                  "description VARCHAR(100) NOT NULL,"
-                  "date CHAR(10) NOT NULL,"
-                  "spindle_speed REAL NOT NULL CHECK(spindle_speed > 0),"
-                  "feed_rate REAL NOT NULL CHECK(feed_rate > 0),"
-                  "layer_height REAL NOT NULL CHECK(layer_height > 0),"
-                  "rapids SMALLINT NOT NULL CHECK(rapids > 0),"
-                  "nozzle_temp REAL NOT NULL CHECK(nozzle_temp >= 0),"
-                  "bed_temp REAL NOT NULL CHECK(bed_temp >= 0 AND bed_temp <= 232),"
-                  "dryer_temp REAL CHECK(dryer_temp >= 0),"
-                  "ambient_temp REAL CHECK(ambient_temp >= 0),"
-                  "humidity TINYINT CHECK(humidity >= 0 AND humidity <= 100),"
-                  "surface_finish REAL CHECK(surface_finish >= 0),"
-                  "cycle_time CHAR(8),"
-                  "layer_time CHAR(8),"
-                  "experiment SMALLINT CHECK(experiment >= 0),"
-                  "dry_time CHAR(8),"
-                  "setup_time CHAR(8),"
-                  "shutdown_time CHAR(8),"
-                  "transition_time CHAR(8),"
-                  "video VARCHAR(255),"
-                  "notes VARCHAR(1000));";
+                    "id INTEGER PRIMARY KEY,"
+                    "description VARCHAR(100) NOT NULL,"
+                    "date CHAR(10) NOT NULL,"
+                    "spindle_speed REAL NOT NULL CHECK(spindle_speed > 0),"
+                    "feed_rate REAL NOT NULL CHECK(feed_rate > 0),"
+                    "layer_height REAL NOT NULL CHECK(layer_height > 0),"
+                    "rapids SMALLINT NOT NULL CHECK(rapids > 0),"
+                    "nozzle_temp REAL NOT NULL CHECK(nozzle_temp >= 0),"
+                    "bed_temp REAL NOT NULL CHECK(bed_temp >= 0 AND bed_temp <= 232),"
+                    "dryer_temp REAL CHECK(dryer_temp >= 0),"
+                    "ambient_temp REAL CHECK(ambient_temp >= 0),"
+                    "humidity TINYINT CHECK(humidity >= 0 AND humidity <= 100),"
+                    "surface_finish REAL CHECK(surface_finish >= 0),"
+                    "cycle_time CHAR(8),"
+                    "layer_time CHAR(8),"
+                    "experiment SMALLINT CHECK(experiment >= 0),"
+                    "dry_time CHAR(8),"
+                    "setup_time CHAR(8),"
+                    "shutdown_time CHAR(8),"
+                    "transition_time CHAR(8),"
+                    "video VARCHAR(255),"
+                    "notes VARCHAR(1000)"
+                  ");";
     if (!query.exec(createTable))
         return query.lastError();
 
     // Tolerances table
     createTable = "CREATE TABLE tolerances ("
-                  "id INTEGER PRIMARY KEY,"
-                  "print_id INTEGER UNIQUE,"
-                  "height REAL CHECK(height > 0),"
-                  "width REAL CHECK(width > 0),"
-                  "bead_width REAL CHECK(bead_width > 0),"
-                  "cross_image VARCHAR(255),"
-                  "FOREIGN KEY(print_id) REFERENCES prints(id));";
+                    "id INTEGER PRIMARY KEY,"
+                    "print_id INTEGER UNIQUE,"
+                    "height REAL CHECK(height > 0),"
+                    "width REAL CHECK(width > 0),"
+                    "bead_width REAL CHECK(bead_width > 0),"
+                    "cross_image VARCHAR(255),"
+                    "FOREIGN KEY(print_id) REFERENCES prints(id) ON DELETE CASCADE"
+                  ");";
     if (!query.exec(createTable))
         return query.lastError();
 
     // Tensile tests table
     createTable = "CREATE TABLE tensiles ("
-                  "id INTEGER PRIMARY KEY,"
-                  "tolerance_id INTEGER,"
-                  "coupon TINYINT CHECK(coupon >= 1 AND coupon <= 12),"
-                  "ultimate REAL,"
-                  "percent_elongation REAL,"
-                  "yield REAL,"
-                  "modulus_elasticity REAL,"
-                  "cross_area REAL,"
-                  "FOREIGN KEY(tolerance_id) REFERENCES tolerances(id),"
-                  "CONSTRAINT ToleranceCoupon UNIQUE (tolerance_id,coupon));";
+                    "id INTEGER PRIMARY KEY,"
+                    "tolerance_id INTEGER,"
+                    "coupon TINYINT CHECK(coupon >= 1 AND coupon <= 12),"
+                    "ultimate REAL,"
+                    "percent_elongation REAL,"
+                    "yield REAL,"
+                    "modulus_elasticity REAL,"
+                    "cross_area REAL,"
+                    "FOREIGN KEY(tolerance_id) REFERENCES tolerances(id) ON DELETE CASCADE,"
+                    "CONSTRAINT ToleranceCoupon UNIQUE (tolerance_id,coupon)"
+                  ");";
     if (!query.exec(createTable))
         return query.lastError();
 
     // Defects table
     createTable = "CREATE TABLE defects ("
-                  "id INTEGER PRIMARY KEY,"
-                  "print_id INTEGER UNIQUE,"
-                  "description VARCHAR(1000) NOT NULL,"
-                  "FOREIGN KEY(print_id) REFERENCES prints(id));";
+                    "id INTEGER PRIMARY KEY,"
+                    "print_id INTEGER UNIQUE,"
+                    "description VARCHAR(1000) NOT NULL,"
+                    "FOREIGN KEY(print_id) REFERENCES prints(id) ON DELETE CASCADE"
+                  ");";
     query.exec(createTable);
     return query.lastError();
 }
@@ -253,13 +277,15 @@ void DatabaseMenu::changeTable(int id)
                         "(SELECT TE.modulus_elasticity FROM tensiles TE WHERE tolerance_id = T.id ORDER BY TE.coupon)),"
                     "(SELECT GROUP_CONCAT(cross_area, \", \") FROM "
                         "(SELECT TE.cross_area FROM tensiles TE WHERE tolerance_id = T.id ORDER BY TE.coupon)) "
-                    "FROM tolerances T;";
+                    "FROM tolerances T "
+                    "ORDER BY print_id;";
             const int numLabels = labels.length();
             for (int i = numLabels - NUM_TENSILE_TESTS; i < numLabels; i++)
                 labels[i].append(" (per coupon)");
         }
         else if (id == defectID)
-            query = "SELECT * FROM defects;";
+            query = "SELECT * FROM defects "
+                    "ORDER BY print_id;";
         queryModel->setQuery(query);
     }
 
@@ -282,6 +308,7 @@ void DatabaseMenu::openDataDialog()
         return;
     }
     recordDialog = DataEntryFactory::createDataEntry(id, DBColumns[id], this);
+    recordDialog->setWindowTitle("Add entry");
     connect(recordDialog, SIGNAL(accepted()), this, SLOT(addEntry()));
     recordDialog->open();
 }
@@ -384,6 +411,56 @@ void DatabaseMenu::addEntry()
     // Delete the dialog and refresh the table
     delete recordDialog;
     changeTable(id);
+}
+
+void DatabaseMenu::deleteEntry()
+{
+    // Get the data ID and table to delete from
+    const int dataID = radioGroup->checkedId();
+    QString tableName;
+    switch(dataID) {
+    case printID:
+        tableName = "prints";
+        break;
+    case testID:
+        tableName = "tolerances";
+        break;
+    case defectID:
+        tableName = "defects";
+        break;
+    case allID:
+    {
+        // Can't delete while viewing all data
+        QMessageBox selectDataDialog(QMessageBox::Information, "Select a data category",
+                             "Please select a specific set of data to delete\n"
+                             "an entry.  To delete all data for a print,\n"
+                             "delete the appropriate print entry.", QMessageBox::Ok, this);
+        selectDataDialog.exec();
+    }
+    default:
+        return;
+    };
+
+    // Get the existing IDs to choose from
+    QStringList IDList;
+    QSqlQuery getIDs("SELECT id FROM " + tableName + ";");
+    getIDs.exec();
+    if (!getIDs.first())
+        return;
+    do
+        IDList.append(getIDs.value(0).toString());
+    while (getIDs.next());
+
+    // Let the user choose an ID and delete the row with that ID if 'OK' is pressed
+    bool ok;
+    int rowID = QInputDialog::getItem(this, "Delete entry", "Select an ID:", IDList, 0, false, &ok).toInt();
+    if (!ok)
+        return;
+    QString deleteStatement = "DELETE FROM ";
+    deleteStatement.append(tableName + " WHERE id=" + QString::number(rowID) + ";");
+    QSqlQuery deleteQuery(deleteStatement);
+    deleteQuery.exec();
+    changeTable(dataID);
 }
 
 void DatabaseMenu::onRowIDClicked(int rowNum)
