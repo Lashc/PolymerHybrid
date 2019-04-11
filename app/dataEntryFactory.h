@@ -10,7 +10,7 @@ class DatabaseColumn;
 class DataEntryFactory
 {
 public:
-    static DataEntry* createDataEntry(int, const QVector<DatabaseColumn*>&, QWidget* parent = nullptr);
+    static DataEntry* createDataEntry(int, const QVector<DatabaseColumn*>&, QStringList, QWidget* parent = nullptr);
 };
 
 #endif // DATAENTRYFACTORY_H

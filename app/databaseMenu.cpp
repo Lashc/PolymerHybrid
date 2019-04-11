@@ -3,6 +3,7 @@
 #include "dataEntryFactory.h"
 #include "dataEntry.h"
 #include "entryView.h"
+#include "query.h"
 #include "types.h"
 #include <QtSql>
 #include <QTableView>
@@ -118,13 +119,14 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
 
     // 'prints' table is default table selected
     printBtn->setChecked(true);
-    changeTable(printID);
+    setTable(printID);
 
     // Connect signals and slots
-    connect(radioGroup, SIGNAL(buttonPressed(int)), this, SLOT(changeTable(int)));
-    connect(addBtn, SIGNAL(released()), this, SLOT(openDataDialog()));
-    connect(backBtn, SIGNAL(released()), this->parentWidget(), SLOT(returnToMainMenu()));
+    connect(radioGroup, SIGNAL(buttonPressed(int)), this, SLOT(setTable(int)));
+    connect(addBtn, SIGNAL(released()), this, SLOT(addEntry()));
+    connect(modifyBtn, SIGNAL(released()), this, SLOT(modifyEntry()));
     connect(deleteBtn, SIGNAL(released()), this, SLOT(deleteEntry()));
+    connect(backBtn, SIGNAL(released()), this->parentWidget(), SLOT(returnToMainMenu()));
     connect(verticalHeader, SIGNAL(sectionClicked(int)), this, SLOT(onRowIDClicked(int)));
 }
 
@@ -223,7 +225,7 @@ DatabaseMenu::~DatabaseMenu()
 
 }
 
-void DatabaseMenu::changeTable(int id)
+void DatabaseMenu::setTable(int id)
 {
     // Labels for the set of data
     QVector<QString> labels;
@@ -277,15 +279,13 @@ void DatabaseMenu::changeTable(int id)
                         "(SELECT TE.modulus_elasticity FROM tensiles TE WHERE tolerance_id = T.id ORDER BY TE.coupon)),"
                     "(SELECT GROUP_CONCAT(cross_area, \", \") FROM "
                         "(SELECT TE.cross_area FROM tensiles TE WHERE tolerance_id = T.id ORDER BY TE.coupon)) "
-                    "FROM tolerances T "
-                    "ORDER BY print_id;";
+                    "FROM tolerances T;";
             const int numLabels = labels.length();
             for (int i = numLabels - NUM_TENSILE_TESTS; i < numLabels; i++)
                 labels[i].append(" (per coupon)");
         }
         else if (id == defectID)
-            query = "SELECT * FROM defects "
-                    "ORDER BY print_id;";
+            query = "SELECT * FROM defects;";
         queryModel->setQuery(query);
     }
 
@@ -296,21 +296,14 @@ void DatabaseMenu::changeTable(int id)
     table->resizeRowsToContents();
 }
 
-void DatabaseMenu::openDataDialog()
+int DatabaseMenu::openEntryDialog(bool isInsertion, QStringList data)
 {
     int id = radioGroup->checkedId();
-    if (id == allID) {
-        // User must select a specific data set
-        QMessageBox selectDataDialog(QMessageBox::Information, "Select a data category",
-                             "Please select a specific set of data to add\n"
-                             "a new entry.", QMessageBox::Ok, this);
-        selectDataDialog.exec();
-        return;
-    }
-    recordDialog = DataEntryFactory::createDataEntry(id, DBColumns[id], this);
-    recordDialog->setWindowTitle("Add entry");
-    connect(recordDialog, SIGNAL(accepted()), this, SLOT(addEntry()));
-    recordDialog->open();
+    if (id == allID)
+        return QDialog::Rejected;
+    entryDialog = DataEntryFactory::createDataEntry(id, DBColumns[id], data, this);
+    entryDialog->setWindowTitle(isInsertion ? "Add entry" : "Modify entry");
+    return entryDialog->exec();
 }
 
 void DatabaseMenu::setDBColumns()
@@ -338,79 +331,120 @@ void DatabaseMenu::setDBColumns()
 
 void DatabaseMenu::addEntry()
 {
-    // Get the data from the dialog and the particular table fields
-    const QStringList& data = recordDialog->getData();
-    const int numData = data.length();
-    const int id = radioGroup->checkedId();
-    const QVector<DatabaseColumn*>& columns = DBColumns[id];
+    if (radioGroup->checkedId() == allID) {
+        // User must select a specific data set
+        QMessageBox selectDataDialog(QMessageBox::Information, "Select a data category",
+                             "Please select a specific set of data to add "
+                             "an entry.", QMessageBox::Ok, this);
+        selectDataDialog.exec();
+        return;
+    }
+
+    // Wait for the user to enter input
+    const int code = openEntryDialog(true);
+    if (code == QDialog::Rejected) {
+        delete entryDialog;
+        return;
+    }
+
+    // Get the data from the dialog and the particular table fields and create and execute
+    // insertion queries against the database
+    const int dataID = radioGroup->checkedId();
+    const QStringList& data = entryDialog->getData();
+    const QVector<DatabaseColumn*>& columns = DBColumns[dataID];
     QStringList fields;
     fields.reserve(columns.size());
     foreach(const DatabaseColumn* column, columns)
         fields.append(column->field);
-    const int numFields = fields.length();
-
-    // Formulate and execute queries
-    QSqlQuery q;
-    QString insertQuery = "INSERT INTO ";
-    if (id == printID || id == defectID) {
-        // Simply insert all data from the dialog into the correct table
-        QString table = id == printID ? "prints" : "defects";
-        insertQuery.append(table + " (" + fields.join(", ") + ") VALUES (");
-        for (int i = 0; i < numFields - 1; i++)
-            insertQuery.append(":" + fields[i] + ", ");
-        insertQuery.append(":" + fields.last() + ");");
-        q.prepare(insertQuery);
-        for (int i = 0; i < numData; i++)
-            q.bindValue(i, data[i].isEmpty() ? QVariant(QVariant::String) : data[i]);
-        q.exec();
-    }
-    else if (id == testID) {
-        // Get the tensile and tolerance fields and put them in lists
-        const int tensileIdx = fields.indexOf("tolerance_id");
-        QStringList toleranceFields = fields.mid(0, tensileIdx);
-        QStringList tensileFields = fields.mid(tensileIdx);
-
-        // Form and execute query for 'tolerances' table
-        insertQuery.append(" tolerances (" + toleranceFields.join(", ") + ") VALUES (");
-        const int numTolerances = toleranceFields.length();
-        for (int i = 0; i < numTolerances - 1; i++)
-            insertQuery.append(":" + toleranceFields[i] + ", ");
-        insertQuery.append(":" + toleranceFields[numTolerances - 1] + ");");
-        q.prepare(insertQuery);
-        for (int i = 0; i < numTolerances; i++)
-            q.bindValue(i, data[i].isEmpty() ? QVariant(QVariant::String) : data[i]);
-        q.exec();
-
-        // Get the tolerance ID from the previous insertion
-        q.exec("SELECT last_insert_rowid();");
-        q.first();
-        const int toleranceID = q.value(0).toInt();
-
-        // Form query for 'tensiles' table
-        const int numTensiles = tensileFields.length();
-        insertQuery = "INSERT INTO tensiles (" + tensileFields.join(", ") + ")" + "VALUES (";
-        for (int i = 0; i < numTensiles - 1; i++)
-            insertQuery.append(":" + tensileFields[i] + ", ");
-        insertQuery.append(":" + tensileFields[numTensiles - 1] + ");");
-        q.prepare(insertQuery);
-
-        // Gather tensile data and execute a query for each coupon
-        QVector<QStringList> tensiles;
-        for (int i = numTolerances; i < data.length(); i++)
-            tensiles.append(data[i].split(", "));
-        for (int i = 0; i < NUM_COUPONS; i++) {
-            q.bindValue(0, toleranceID);
-            q.bindValue(1, i + 1);
-            for (int j = 0; j < NUM_TENSILE_TESTS; j++) {
-                q.bindValue(j + 2, tensiles[i][j].isEmpty() ? QVariant(QVariant::String) : tensiles[i][j]);
-            }
-            q.exec();
-        }
+    QSqlError insertError = polyDB::insertInto(dataID, fields, data);
+    if (insertError.type() != QSqlError::NoError) {
+        QMessageBox failedInsertionDialog(QMessageBox::Critical, "Database error",
+                             "Failed to insert into the database!\n\n"
+                             "Error reported:\n"
+                             + insertError.text(), QMessageBox::Ok, this);
+        failedInsertionDialog.exec();
     }
 
     // Delete the dialog and refresh the table
-    delete recordDialog;
-    changeTable(id);
+    delete entryDialog;
+    setTable(dataID);
+}
+
+void DatabaseMenu::modifyEntry()
+{
+    // Get the data ID and table to modify
+    const int dataID = radioGroup->checkedId();
+    QString tableName;
+    switch(dataID) {
+    case printID:
+        tableName = "prints";
+        break;
+    case testID:
+        tableName = "tolerances";
+        break;
+    case defectID:
+        tableName = "defects";
+        break;
+    case allID:
+    {
+        // Can't modify while viewing all data
+        QMessageBox selectDataDialog(QMessageBox::Information, "Select a data category",
+                             "Please select a specific set of data to modify "
+                             "an entry.", QMessageBox::Ok, this);
+        selectDataDialog.exec();
+    }
+    default:
+        return;
+    };
+
+    // Get the existing rows/IDs to choose from
+    QStringList IDList;
+    for (int i = 0, numRows = queryModel->rowCount(); i < numRows; i++)
+        IDList.append(queryModel->record(i).value(0).toString());
+    if (IDList.isEmpty())
+        return;
+    int rowNum = 1;
+    QStringList RowIDList;
+    foreach(const QString& ID, IDList)
+        RowIDList.append(QString::number(rowNum++) + ", " + ID);
+
+    // Let the user choose a row/ID so they can alter the row with that ID if 'OK' is pressed
+    bool ok;
+    QString row_ID = QInputDialog::getItem(this, "Modify entry", "Select a row/ID:", RowIDList, 0, false, &ok);
+    const int row = row_ID.section(", ", 0, 0).toInt();
+    const int ID = row_ID.section(", ", 1, 1).toInt();
+    if (!ok)
+        return;
+
+    // Populate a data entry dialog with the existing data and wait for the user to enter input
+    QStringList data;
+    for (int i = 1, numFields = queryModel->record(row - 1).count(); i < numFields; i++)
+        data.append(queryModel->record(row - 1).value(i).toString());
+    const int code = openEntryDialog(false, data);
+    if (code == QDialog::Rejected) {
+        delete entryDialog;
+        return;
+    }
+
+    // Update the database with the new data
+    data = entryDialog->getData();
+    const QVector<DatabaseColumn*>& columns = DBColumns[dataID];
+    QStringList fields;
+    fields.reserve(columns.size());
+    foreach(const DatabaseColumn* column, columns)
+        fields.append(column->field);
+    QSqlError updateError = polyDB::update(dataID, fields, data, ID);
+    if (updateError.type() != QSqlError::NoError) {
+        QMessageBox failedUpdateDialog(QMessageBox::Critical, "Database error",
+                             "Failed to insert into the database!\n\n"
+                             "Error reported:\n"
+                             + updateError.text(), QMessageBox::Ok, this);
+        failedUpdateDialog.exec();
+    }
+
+    // Delete the dialog and refresh the table
+    delete entryDialog;
+    setTable(dataID);
 }
 
 void DatabaseMenu::deleteEntry()
@@ -432,8 +466,8 @@ void DatabaseMenu::deleteEntry()
     {
         // Can't delete while viewing all data
         QMessageBox selectDataDialog(QMessageBox::Information, "Select a data category",
-                             "Please select a specific set of data to delete\n"
-                             "an entry.  To delete all data for a print,\n"
+                             "Please select a specific set of data to delete "
+                             "an entry.  To delete all data associated with a print, "
                              "delete the appropriate print entry.", QMessageBox::Ok, this);
         selectDataDialog.exec();
     }
@@ -441,26 +475,39 @@ void DatabaseMenu::deleteEntry()
         return;
     };
 
-    // Get the existing IDs to choose from
+    // Get the existing rows/IDs to choose from
     QStringList IDList;
-    QSqlQuery getIDs("SELECT id FROM " + tableName + ";");
-    getIDs.exec();
-    if (!getIDs.first())
+    for (int i = 0, numRows = queryModel->rowCount(); i < numRows; i++)
+        IDList.append(queryModel->record(i).value(0).toString());
+    if (IDList.isEmpty())
         return;
-    do
-        IDList.append(getIDs.value(0).toString());
-    while (getIDs.next());
+    int rowNum = 1;
+    QStringList RowIDList;
+    foreach(const QString& ID, IDList)
+        RowIDList.append(QString::number(rowNum++) + ", " + ID);
 
-    // Let the user choose an ID and delete the row with that ID if 'OK' is pressed
+    // Let the user choose a row/ID and delete the row with that ID if 'OK' is pressed
     bool ok;
-    int rowID = QInputDialog::getItem(this, "Delete entry", "Select an ID:", IDList, 0, false, &ok).toInt();
+    int ID = QInputDialog::getItem(this, "Delete entry", "Select a row/ID:", RowIDList, 0, false, &ok).section(", ", 1, 1).toInt();
     if (!ok)
         return;
+
+    if (dataID == printID) {
+        QMessageBox printWarningDialog(QMessageBox::Warning, "Deletion warning",
+                             "Warning: deleting a print entry will delete all "
+                             "of its associated test results and defect "
+                             "information!  Do you wish to continue?", QMessageBox::No | QMessageBox::Yes,
+                             this);
+        int button = printWarningDialog.exec();
+        if (button == QMessageBox::No)
+            return;
+    }
+
     QString deleteStatement = "DELETE FROM ";
-    deleteStatement.append(tableName + " WHERE id=" + QString::number(rowID) + ";");
+    deleteStatement.append(tableName + " WHERE id=" + QString::number(ID) + ";");
     QSqlQuery deleteQuery(deleteStatement);
     deleteQuery.exec();
-    changeTable(dataID);
+    setTable(dataID);
 }
 
 void DatabaseMenu::onRowIDClicked(int rowNum)
@@ -469,7 +516,7 @@ void DatabaseMenu::onRowIDClicked(int rowNum)
     const int id = radioGroup->checkedId();
     if (id == allID) {
         QMessageBox selectDataDialog(QMessageBox::Information, "Select a data category",
-                             "Please select a specific set of data to view\n"
+                             "Please select a specific set of data to view "
                              "a row of data.", QMessageBox::Ok, this);
         selectDataDialog.exec();
         return;

@@ -41,13 +41,21 @@ PrintEntry::PrintEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* paren
     mainLayout->insertLayout(2, notesLayout);
 }
 
+PrintEntry::PrintEntry(const QVector<DatabaseColumn*>& DBColumns, QStringList data, QWidget* parent)
+    : PrintEntry(DBColumns, parent)
+{
+    const int numData = data.length();
+    for (int i = 0; i < numData - 1; i++)
+        lineEdits[i]->setText(data[i]);
+    notes->setText(data.last());
+}
+
 QStringList PrintEntry::getData() const
 {
     QStringList data;
     foreach(const QLineEdit* input, lineEdits)
         data.append(input->text());
     data.append(notes->toPlainText());
-    QString invalidInputs;
     return data;
 }
 

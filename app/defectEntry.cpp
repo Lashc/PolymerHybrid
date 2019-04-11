@@ -28,6 +28,13 @@ DefectEntry::DefectEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* par
     mainLayout->insertLayout(1, lineEditLayout);
 }
 
+DefectEntry::DefectEntry(const QVector<DatabaseColumn*>& DBColumns, QStringList data, QWidget* parent)
+    : DefectEntry(DBColumns, parent)
+{
+    printIDEdit->setText(data[0]);
+    descEdit->setText(data.last());
+}
+
 QStringList DefectEntry::getData() const
 {
     return { printIDEdit->text(), descEdit->toPlainText() };

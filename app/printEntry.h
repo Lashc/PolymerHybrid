@@ -12,6 +12,7 @@ class PrintEntry : public DataEntry
     Q_OBJECT
 public:
     explicit PrintEntry(const QVector<DatabaseColumn*>&, QWidget* parent = nullptr);
+    explicit PrintEntry(const QVector<DatabaseColumn*>&, QStringList data, QWidget* parent = nullptr);
     QStringList getData() const override;
 
 private:

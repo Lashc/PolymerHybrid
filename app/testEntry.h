@@ -11,6 +11,7 @@ class TestEntry : public DataEntry
     Q_OBJECT
 public:
     explicit TestEntry(const QVector<DatabaseColumn*>&, QWidget* parent = nullptr);
+    explicit TestEntry(const QVector<DatabaseColumn*>&, QStringList data, QWidget* parent = nullptr);
     QStringList getData() const override;
 
 private:

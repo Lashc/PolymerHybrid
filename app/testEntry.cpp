@@ -67,6 +67,21 @@ TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* parent)
     mainLayout->insertWidget(1, tabs);
 }
 
+TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, QStringList data, QWidget* parent)
+    : TestEntry(DBColumns, parent)
+{
+    int i;
+    const int numTolerances = toleranceLineEdits.length();
+    for (i = 0; i < numTolerances; i++)
+        toleranceLineEdits[i]->setText(data[i]);
+    const int numCoupons = couponLineEdits.length();
+    for (int t = 0, numData = data.length(); i < numData; t++, i++) {
+        QStringList tensiles = data[i].split(", ");
+        for (int c = 0; c < numCoupons; c++)
+            couponLineEdits[c][t]->setText(tensiles[c]);
+    }
+}
+
 QStringList TestEntry::getData() const
 {
     QStringList data;

@@ -34,20 +34,21 @@ private:
     QPushButton* modifyBtn;
     QPushButton* deleteBtn;
     QPushButton* backBtn;
-    DataEntry* recordDialog;
+    DataEntry* entryDialog;
 
     QSqlError initDB();
     void setDBColumns();
     QSqlError createTables();
     QVector<QString> getLabels(int);
+    int openEntryDialog(bool, QStringList data = QStringList());
 
 signals:
     void returnToMainMenu();
 
 public slots:
-    void changeTable(int);
-    void openDataDialog();
+    void setTable(int);
     void addEntry();
+    void modifyEntry();
     void deleteEntry();
     void onRowIDClicked(int);
 };
