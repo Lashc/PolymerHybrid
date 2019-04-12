@@ -16,14 +16,14 @@ DataEntry* DataEntryFactory::createDataEntry(int type, const QVector<DatabaseCol
             return new PrintEntry(DBColumns, data, parent);
     case testID:
         if (data.isEmpty())
-            return new TestEntry(DBColumns, parent);
+            return new TestEntry(DBColumns, true, parent);
         else
-            return new TestEntry(DBColumns, data, parent);
+            return new TestEntry(DBColumns, data, false, parent);
     case defectID:
         if (data.isEmpty())
-            return new DefectEntry(DBColumns, parent);
+            return new DefectEntry(DBColumns, true, parent);
         else
-            return new DefectEntry(DBColumns, data, parent);
+            return new DefectEntry(DBColumns, data, false, parent);
     default:
         return nullptr;
     }

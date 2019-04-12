@@ -30,12 +30,17 @@ Control::Control(QWidget *parent) : QWidget(parent)
 
 void Control::onMenuButtonReleased(int id)
 {
-    // If not opening the operations manual, switch pages.
-    if (id != manualID)
+    // Switch to the database page
+    if (id == databaseID)
         pages->setCurrentIndex(id);
 
+    // Open the camera menu
+    else if (id == cameraID) {
+
+    }
+
     // Open the operations manual PDF
-    else {
+    else if (id == manualID) {
         QString manualFilePath = QDir::homePath() + "/Documents/'Polymer Hybrid Manufacturing Operations Manual.pdf'";
         QString manualFileCheck = manualFilePath;
         if (!QFile::exists(manualFileCheck.remove('\''))) {

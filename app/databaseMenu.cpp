@@ -40,7 +40,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     table->setAlternatingRowColors(true);
     QHeaderView* const horizontalHeader = table->horizontalHeader();
     horizontalHeader->setFont(headerFont);
-    horizontalHeader->setMaximumSectionSize(400);
+    horizontalHeader->setMaximumSectionSize(450);
     QHeaderView* const verticalHeader = table->verticalHeader();
     verticalHeader->setFont(headerFont);
     verticalHeader->setMinimumWidth(50);

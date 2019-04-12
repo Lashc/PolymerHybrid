@@ -7,7 +7,7 @@
 #include <QGridLayout>
 #include <QMessageBox>
 
-TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* parent)
+TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, bool isInsert, QWidget* parent)
     : DataEntry(DBColumns, parent)
 {
     // Tab widget and list of tabs
@@ -23,8 +23,11 @@ TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* parent)
         const DatabaseColumn* column = columns[i];
         toleranceLayout->addWidget(new QLabel(column->label + ":"), i / 2, (2 * i) % 4);
         QLineEdit* input = new QLineEdit;
-        if (column->validator)
+        // Don't check a foreign key on update or let the user update it
+        if (column->validator && (column->validatorType != "foreign_key" || isInsert))
             input->setValidator(column->validator);
+        else
+            input->setReadOnly(true);
         if (column->validatorType == "file")
             input->setMaxLength(column->validatorArgs[0].toInt());
         if (column->required)
@@ -67,8 +70,8 @@ TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* parent)
     mainLayout->insertWidget(1, tabs);
 }
 
-TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, QStringList data, QWidget* parent)
-    : TestEntry(DBColumns, parent)
+TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, QStringList data, bool isInsert, QWidget* parent)
+    : TestEntry(DBColumns, isInsert, parent)
 {
     int i;
     const int numTolerances = toleranceLineEdits.length();

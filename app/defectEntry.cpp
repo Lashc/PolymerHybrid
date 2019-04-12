@@ -6,12 +6,16 @@
 #include <QGridLayout>
 #include <QMessageBox>
 
-DefectEntry::DefectEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* parent)
+DefectEntry::DefectEntry(const QVector<DatabaseColumn*>& DBColumns, bool isInsert, QWidget* parent)
     : DataEntry(DBColumns, parent)
 {
     // Create labels, a line edit, and a text edit and add them to a grid layout
     printIDEdit = new QLineEdit;
-    printIDEdit->setValidator(columns[0]->validator);
+    // Don't check a foreign key on update or let the user update it
+    if (isInsert)
+        printIDEdit->setValidator(columns[0]->validator);
+    else
+        printIDEdit->setReadOnly(true);
     printIDEdit->setStyleSheet("border: 2px solid rgb(201, 21, 58);"
                                "border-radius: 2px;");
     descEdit = new QTextEdit;
@@ -28,8 +32,8 @@ DefectEntry::DefectEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* par
     mainLayout->insertLayout(1, lineEditLayout);
 }
 
-DefectEntry::DefectEntry(const QVector<DatabaseColumn*>& DBColumns, QStringList data, QWidget* parent)
-    : DefectEntry(DBColumns, parent)
+DefectEntry::DefectEntry(const QVector<DatabaseColumn*>& DBColumns, QStringList data, bool isInsert, QWidget* parent)
+    : DefectEntry(DBColumns, isInsert, parent)
 {
     printIDEdit->setText(data[0]);
     descEdit->setText(data.last());

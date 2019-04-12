@@ -50,6 +50,7 @@ EntryView::EntryView(int dataID, int rowNum, QVector<QString> labels, const QSql
         fieldText->setAlignment(Qt::AlignCenter);
         fieldText->setTextInteractionFlags(Qt::TextSelectableByMouse);
         fieldText->setWordWrap(true);
+        fieldText->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding));
         gridLayout->addWidget(fieldText, i / 2, ((2 * i) + 1) % 4);
     }
 
