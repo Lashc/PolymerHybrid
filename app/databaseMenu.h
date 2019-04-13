@@ -43,7 +43,6 @@ private:
     int openEntryDialog(bool, QStringList data = QStringList());
 
 signals:
-    void returnToMainMenu();
 
 public slots:
     void setTable(int);

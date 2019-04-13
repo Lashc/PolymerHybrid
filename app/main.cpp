@@ -17,6 +17,10 @@ int main(int argc, char *argv[])
     Control gui;
     gui.show();
     gui.setWindowTitle("Polymer Hybrid Manufacturing Data System");
-    gui.resize(1280, 800);
+    #ifdef __arm__
+        gui.showMaximized();
+    #else
+        gui.resize(1280, 800);
+    #endif
     return a.exec();
 }

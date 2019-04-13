@@ -38,7 +38,8 @@ SOURCES += \
     databaseColumn.cpp \
     dateValidator.cpp \
     foreignKeyValidator.cpp \
-    query.cpp
+    query.cpp \
+    cameraMenu.cpp
 
 HEADERS += \
         control.h \
@@ -54,15 +55,16 @@ HEADERS += \
     databaseColumn.h \
     dateValidator.h \
     foreignKeyValidator.h \
-    query.h
+    query.h \
+    cameraMenu.h
 
 FORMS += \
         control.ui
 
 # Default rules for deployment.
-qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+#qnx: target.path = /tmp/$${TARGET}/bin
+#else: unix:!android: target.path = /opt/$${TARGET}/bin
+#!isEmpty(target.path): INSTALLS += target
 
 RESOURCES += \
     polymerhybrid.qrc
@@ -72,3 +74,11 @@ DISTFILES += \
     print_fields.rtf \
     test_fields.rtf \
     defect_fields.rtf
+
+# Location to cross-compile GUI for Raspberry Pi
+target.path = /home/pi/
+INSTALLS += target
+
+# Compile with OpenCV
+CONFIG += link_pkgconfig
+PKGCONFIG += opencv

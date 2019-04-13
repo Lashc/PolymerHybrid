@@ -2,6 +2,7 @@
 #include "menu.h"
 #include "types.h"
 #include "databaseMenu.h"
+#include "cameraMenu.h"
 #include <cstdlib>
 #include <string>
 #include <QStackedWidget>
@@ -15,8 +16,10 @@ Control::Control(QWidget *parent) : QWidget(parent)
     pages = new QStackedWidget;
     Menu* mainMenu = new Menu(this);
     DatabaseMenu* databaseMenu = new DatabaseMenu(this);
+    CameraMenu* cameraMenu = new CameraMenu(this);
     pages->addWidget(mainMenu);
     pages->addWidget(databaseMenu);
+    pages->addWidget(cameraMenu);
 
     // Connect signals and slots for changing pages via buttons
     connect(mainMenu, SIGNAL(buttonReleased(int)), this, SLOT(onMenuButtonReleased(int)));
@@ -30,14 +33,9 @@ Control::Control(QWidget *parent) : QWidget(parent)
 
 void Control::onMenuButtonReleased(int id)
 {
-    // Switch to the database page
-    if (id == databaseID)
+    // Switch to the database or camera page
+    if (id == databaseID || id == cameraID)
         pages->setCurrentIndex(id);
-
-    // Open the camera menu
-    else if (id == cameraID) {
-
-    }
 
     // Open the operations manual PDF
     else if (id == manualID) {

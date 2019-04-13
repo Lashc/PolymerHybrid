@@ -84,7 +84,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     // and for returning to the main menu
     QGridLayout* pushBtnLayout = new QGridLayout;
     pushBtnLayout->setVerticalSpacing(50);
-    QSize pushBtnMinSize(150, 100);
+    QSize pushBtnMinSize(180, 120);
     QSizePolicy pushBtnSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum, QSizePolicy::PushButton);
     QFont pushBtnFont("Gotham", 20, QFont::Medium);
 
