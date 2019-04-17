@@ -78,7 +78,3 @@ DISTFILES += \
 # Location to cross-compile GUI for Raspberry Pi
 target.path = /home/pi/
 INSTALLS += target
-
-# Compile with OpenCV
-CONFIG += link_pkgconfig
-PKGCONFIG += opencv

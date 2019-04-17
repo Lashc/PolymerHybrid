@@ -1,10 +1,12 @@
 #include "cameraMenu.h"
 #include <cstdlib>
+#include <string>
 #include <QPushButton>
 #include <QLabel>
 #include <QGridLayout>
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/types_c.h>
+#include <QInputDialog>
+#include <QRegularExpressionValidator>
+#include <QMessageBox>
 
 CameraMenu::CameraMenu(QWidget *parent)
     : QWidget(parent)
@@ -18,14 +20,9 @@ CameraMenu::CameraMenu(QWidget *parent)
     // Push buttons for interacting with a camera and temperature sensor as well as going back
     // to the main menu
     QSize pushBtnMinSize(150, 100);
-    QSize pushBtnMaxSize(300, 200);
+    QSize pushBtnMaxSize(600, 300);
     QSizePolicy pushBtnSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred, QSizePolicy::PushButton);
     QFont pushBtnFont("Gotham", 20, QFont::Medium);
-    recordBtn = new QPushButton("Record video");
-    recordBtn->setMinimumSize(pushBtnMinSize);
-    recordBtn->setMaximumSize(pushBtnMaxSize);
-    recordBtn->setSizePolicy(pushBtnSizePolicy);
-    recordBtn->setFont(pushBtnFont);
     viewBtn = new QPushButton("View camera");
     viewBtn->setMinimumSize(pushBtnMinSize);
     viewBtn->setMaximumSize(pushBtnMaxSize);
@@ -47,10 +44,9 @@ CameraMenu::CameraMenu(QWidget *parent)
     layout->addWidget(cameraHeader, 1);
     QGridLayout* btnLayout = new QGridLayout;
     layout->addLayout(btnLayout, 3);
-    btnLayout->addWidget(recordBtn, 0, 0);
-    btnLayout->addWidget(viewBtn, 0, 1);
-    btnLayout->addWidget(recordViewBtn, 0, 2);
-    btnLayout->addWidget(backBtn, 1, 0, 1, 3);
+    btnLayout->addWidget(viewBtn, 0, 0);
+    btnLayout->addWidget(recordViewBtn, 0, 1);
+    btnLayout->addWidget(backBtn, 1, 0, 1, 2);
     btnLayout->setSpacing(30);
     layout->addSpacing(50);
     layout->setMargin(10);
@@ -60,26 +56,41 @@ CameraMenu::CameraMenu(QWidget *parent)
     // Connect signals and slots
     connect(backBtn, SIGNAL(released()), this->parentWidget(), SLOT(returnToMainMenu()));
     connect(viewBtn, SIGNAL(released()), this, SLOT(viewCamera()));
+    connect(recordViewBtn, SIGNAL(released()), this, SLOT(viewAndRecordCamera()));
 }
 
 void CameraMenu::viewCamera()
 {
-    // Open the capture
-    cv::VideoCapture cap(0);
-    if(!cap.isOpened())
-        return;
+    // Execute a pre-compiled program for viewing camera feed
+    #ifdef __arm__
+        system("sudo ~/./viewVideo");
+    #else
+        system("~/./viewVideo");
+    #endif
+}
 
-    // Continually show video from the camera with temperature overlay until 'ESC' key is pressed
-    for(;;)
-    {
-        cv::Mat frame;
-        cap >> frame;
-        putText(frame, "Temperature", cv::Point(0, 470), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 0, 0), 4);
-        imshow("Camera", frame);
-        char c = cv::waitKey(25);
-        if (c == 27)
-            break;
+void CameraMenu::viewAndRecordCamera()
+{
+    // Get a filename from the user
+    bool ok;
+    QString filename = QInputDialog::getText(this, "Video filename", "Please enter a filename for the video (*.avi):", QLineEdit::Normal, "", &ok);
+    QRegularExpressionValidator fileValidator(QRegularExpression("^(\\w)+[.]avi$"), this);
+    int pos = 0;
+    if (ok && (fileValidator.validate(filename, pos) != QValidator::Acceptable || filename.length() > 255)) {
+        // Invalid filename
+        QMessageBox invalidFilenameDialog(QMessageBox::Warning, "Invalid filename",
+                             "The filename entered is invalid.  The filename must be in the "
+                             "form *.avi (e.g. video.avi) and no more than 255 characters long.", QMessageBox::Ok, this);
+        invalidFilenameDialog.exec();
+        return;
     }
-    cv::destroyAllWindows();
-    return;
+    // Execute a pre-compiled program for viewing and recording camera feed
+    std::string command;
+    #ifdef __arm__
+        command = "sudo ~/./viewRecordVideo ";
+    #else
+        command = "~/./viewRecordVideo ";
+    #endif
+    command.append(filename.toStdString());
+    system(command.c_str());
 }

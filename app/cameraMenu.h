@@ -15,7 +15,6 @@ public:
 
 private:
     QLabel* cameraHeader;
-    QPushButton* recordBtn;
     QPushButton* viewBtn;
     QPushButton* recordViewBtn;
     QPushButton* backBtn;
@@ -24,6 +23,7 @@ signals:
 
 public slots:
     void viewCamera();
+    void viewAndRecordCamera();
 };
 
 #endif // CAMERAMENU_H
