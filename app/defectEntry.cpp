@@ -22,9 +22,13 @@ DefectEntry::DefectEntry(const QVector<DatabaseColumn*>& DBColumns, bool isInser
     descEdit->setStyleSheet("border: 2px solid rgb(201, 21, 58);"
                             "border-radius: 2px;");
     QGridLayout* lineEditLayout = new QGridLayout;
-    lineEditLayout->addWidget(new QLabel(columns[0]->label + ":"), 0, 0);
+    QLabel* printLabel = new QLabel(columns[0]->label + ":");
+    printLabel->setFont(QFont("Gotham", 18));
+    lineEditLayout->addWidget(printLabel, 0, 0);
     lineEditLayout->addWidget(printIDEdit, 0, 1);
-    lineEditLayout->addWidget(new QLabel(columns[1]->label + ":"), 1, 0);
+    QLabel* descLabel = new QLabel(columns[1]->label + ":");
+    descLabel->setFont(QFont("Gotham", 18));
+    lineEditLayout->addWidget(descLabel, 1, 0);
     lineEditLayout->addWidget(descEdit, 1, 1);
 
     // Add the input layout to the main layout

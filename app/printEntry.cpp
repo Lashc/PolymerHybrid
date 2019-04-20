@@ -15,7 +15,9 @@ PrintEntry::PrintEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* paren
     const int numColumns = columns.length();
     for (int i = 0; i < numColumns - 1; i++) {
         const DatabaseColumn* column = columns[i];
-        lineEditLayout->addWidget(new QLabel(column->label + ":"), i / 2, (2 * i) % 4);
+        QLabel* inputLabel = new QLabel(column->label + ":");
+        inputLabel->setFont(QFont("Gotham", 18));
+        lineEditLayout->addWidget(inputLabel, i / 2, (2 * i) % 4);
         QLineEdit* input = new QLineEdit;
         if (column->validator)
             input->setValidator(column->validator);
@@ -27,11 +29,14 @@ PrintEntry::PrintEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* paren
         lineEdits.append(input);
         lineEditLayout->addWidget(input, i / 2, ((2 * i) + 1) % 4);
     }
+    lineEditLayout->setVerticalSpacing(15);
 
     // Layout for writing notes
     QHBoxLayout* notesLayout = new QHBoxLayout;
     notes = new QTextEdit;
-    notesLayout->addWidget(new QLabel(columns.last()->label + ":"));
+    QLabel* notesLabel = new QLabel(columns.last()->label + ":");
+    notesLabel->setFont(QFont("Gotham", 18));
+    notesLayout->addWidget(notesLabel);
     notesLayout->addWidget(notes);
     notesLayout->setSpacing(30);
 

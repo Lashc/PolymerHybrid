@@ -17,10 +17,10 @@
 int main() {
     // Open the video capture
     cv::Size frameSize(640, 480);
-    cv::VideoCapture cap(0);
-    cap.set(CV_CAP_PROP_FRAME_HEIGHT, frameSize.height);
-    cap.set(CV_CAP_PROP_FRAME_WIDTH, frameSize.width);
-    if(!cap.isOpened())
+    cv::VideoCapture capture(0);
+    capture.set(CV_CAP_PROP_FRAME_HEIGHT, frameSize.height);
+    capture.set(CV_CAP_PROP_FRAME_WIDTH, frameSize.width);
+    if(!capture.isOpened())
         return -1;
 
     // Set up the temperature sensor
@@ -61,7 +61,7 @@ int main() {
         
         // Retrieve the next frame
         cv::Mat frame;
-        cap >> frame;
+        capture >> frame;
         
         // Put the temperature as an overlay on the frame and show the frame
         #ifdef __arm__

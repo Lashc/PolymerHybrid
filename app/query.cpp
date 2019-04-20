@@ -7,7 +7,81 @@
 #include <QVector>
 
 namespace polyDB {
-    QSqlError insertInto(const int dataID, QStringList fields, QStringList data)
+    QSqlError createTables()
+    {
+        // Form and execute queries for creating tables
+        QSqlQuery query;
+        QString createTable;
+
+        // Prints table
+        createTable = "CREATE TABLE prints ("
+                        "id INTEGER PRIMARY KEY,"
+                        "description VARCHAR(100) NOT NULL,"
+                        "date CHAR(10) NOT NULL,"
+                        "spindle_speed REAL NOT NULL CHECK(spindle_speed > 0),"
+                        "feed_rate REAL NOT NULL CHECK(feed_rate > 0),"
+                        "layer_height REAL NOT NULL CHECK(layer_height > 0),"
+                        "rapids SMALLINT NOT NULL CHECK(rapids > 0),"
+                        "nozzle_temp REAL NOT NULL CHECK(nozzle_temp >= 0),"
+                        "bed_temp REAL NOT NULL CHECK(bed_temp >= 0 AND bed_temp <= 232),"
+                        "dryer_temp REAL CHECK(dryer_temp >= 0),"
+                        "ambient_temp REAL CHECK(ambient_temp >= 0),"
+                        "humidity TINYINT CHECK(humidity >= 0 AND humidity <= 100),"
+                        "surface_finish REAL CHECK(surface_finish >= 0),"
+                        "cycle_time CHAR(8),"
+                        "layer_time CHAR(8),"
+                        "experiment SMALLINT CHECK(experiment >= 0),"
+                        "dry_time CHAR(8),"
+                        "setup_time CHAR(8),"
+                        "shutdown_time CHAR(8),"
+                        "transition_time CHAR(8),"
+                        "video VARCHAR(255),"
+                        "notes VARCHAR(1000)"
+                      ");";
+        if (!query.exec(createTable))
+            return query.lastError();
+
+        // Tolerances table
+        createTable = "CREATE TABLE tolerances ("
+                        "id INTEGER PRIMARY KEY,"
+                        "print_id INTEGER UNIQUE,"
+                        "height REAL CHECK(height > 0),"
+                        "width REAL CHECK(width > 0),"
+                        "bead_width REAL CHECK(bead_width > 0),"
+                        "cross_image VARCHAR(255),"
+                        "FOREIGN KEY(print_id) REFERENCES prints(id) ON DELETE CASCADE"
+                      ");";
+        if (!query.exec(createTable))
+            return query.lastError();
+
+        // Tensile tests table
+        createTable = "CREATE TABLE tensiles ("
+                        "id INTEGER PRIMARY KEY,"
+                        "tolerance_id INTEGER,"
+                        "coupon TINYINT CHECK(coupon >= 1 AND coupon <= 12),"
+                        "ultimate REAL,"
+                        "percent_elongation REAL,"
+                        "yield REAL,"
+                        "modulus_elasticity REAL,"
+                        "cross_area REAL,"
+                        "FOREIGN KEY(tolerance_id) REFERENCES tolerances(id) ON DELETE CASCADE,"
+                        "CONSTRAINT ToleranceCoupon UNIQUE (tolerance_id,coupon)"
+                      ");";
+        if (!query.exec(createTable))
+            return query.lastError();
+
+        // Defects table
+        createTable = "CREATE TABLE defects ("
+                        "id INTEGER PRIMARY KEY,"
+                        "print_id INTEGER UNIQUE,"
+                        "description VARCHAR(1000) NOT NULL,"
+                        "FOREIGN KEY(print_id) REFERENCES prints(id) ON DELETE CASCADE"
+                      ");";
+        query.exec(createTable);
+        return query.lastError();
+    }
+
+    QSqlError insertEntry(const int dataID, QStringList fields, QStringList data)
     {
         // Formulate and execute 'INSERT INTO' queries
         const int numData = data.length();
@@ -75,7 +149,7 @@ namespace polyDB {
         return q.lastError();
     }
 
-    QSqlError update(const int dataID, QStringList fields, QStringList data, const int rowID)
+    QSqlError updateEntry(const int dataID, QStringList fields, QStringList data, const int rowID)
     {
         // Formulate and execute 'UPDATE' queries
         const int numData = data.length();
@@ -135,6 +209,16 @@ namespace polyDB {
                     return q.lastError();
             }
         }
+        return q.lastError();
+    }
+
+    QSqlError deleteEntry(QString table, const int rowID)
+    {
+        // Delete the row with the given ID from the specified table
+        QString deleteStatement = "DELETE FROM ";
+        deleteStatement.append(table + " WHERE id=" + QString::number(rowID) + ";");
+        QSqlQuery q(deleteStatement);
+        q.exec();
         return q.lastError();
     }
 }

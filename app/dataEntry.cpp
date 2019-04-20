@@ -14,7 +14,7 @@ DataEntry::DataEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget *parent,
 
     // Title widget
     title = new QLabel("Enter data:");
-    title->setFont(QFont("Futura", 20, QFont::Medium));
+    title->setFont(QFont("Futura", 28, QFont::Medium));
 
     // Action buttons for submitting and canceling database insertions
     QSize btnSize(100, 50);
@@ -36,6 +36,7 @@ DataEntry::DataEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget *parent,
 
     // Main layout
     QVBoxLayout* layout = new QVBoxLayout;
+    layout->setSpacing(25);
     layout->addWidget(title);
     layout->addLayout(btnLayout);
     setLayout(layout);

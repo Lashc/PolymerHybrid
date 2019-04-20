@@ -21,7 +21,9 @@ TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, bool isInsert, Q
     const int numToleranceInputs = numColumns - NUM_TENSILE_TESTS;
     for (int i = 0; i < numToleranceInputs; i++) {
         const DatabaseColumn* column = columns[i];
-        toleranceLayout->addWidget(new QLabel(column->label + ":"), i / 2, (2 * i) % 4);
+        QLabel* toleranceLabel = new QLabel(column->label + ":");
+        toleranceLabel->setFont(QFont("Gotham", 18));
+        toleranceLayout->addWidget(toleranceLabel, i / 2, (2 * i) % 4);
         QLineEdit* input = new QLineEdit;
         // Don't check a foreign key on update or let the user update it
         if (column->validator && (column->validatorType != "foreign_key" || isInsert))
@@ -49,7 +51,9 @@ TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, bool isInsert, Q
         QGridLayout* couponLayout = new QGridLayout;
         for (int j = 0; j < NUM_TENSILE_TESTS; j++) {
             const DatabaseColumn* column = columns[numToleranceInputs + j];
-            couponLayout->addWidget(new QLabel(tensileLabels[j] + ":"), j / 2, (2 * j) % 4);
+            QLabel* tensileLabel = new QLabel(tensileLabels[j] + ":");
+            tensileLabel->setFont(QFont("Gotham", 18));
+            couponLayout->addWidget(tensileLabel, j / 2, (2 * j) % 4);
             QLineEdit* input = new QLineEdit;
             if (column->validator)
                 input->setValidator(column->validator);

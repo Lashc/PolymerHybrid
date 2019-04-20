@@ -36,9 +36,8 @@ private:
     QPushButton* backBtn;
     DataEntry* entryDialog;
 
-    QSqlError initDB();
+    void initDB();
     void setDBColumns();
-    QSqlError createTables();
     QVector<QString> getLabels(int);
     int openEntryDialog(bool, QStringList data = QStringList());
 

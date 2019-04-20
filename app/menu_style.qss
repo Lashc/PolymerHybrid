@@ -1,5 +1,5 @@
 /* General push buttons that are children
-   of 'Menu' and 'DatabaseMenu' */
+   of 'Menu', 'CameraMenu', and 'DatabaseMenu' */
 Menu > QPushButton {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 white, stop:1 rgb(188, 198, 204));
     border: 2px groove rgb(201, 21, 58);
@@ -27,7 +27,7 @@ DatabaseMenu > QPushButton:pressed {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 rgb(188, 198, 204), stop:1 white);
 }
 
-/* Push button for confirming to add records to the database */
+/* Push button for confirming to add entries to the database */
 QPushButton#submit {
     border: 2px groove black;
     border-radius: 4px;
@@ -37,7 +37,7 @@ QPushButton#submit:pressed {
     background: rgb(34, 139, 34);
 }
 
-/* Push button for canceling adding records to the database */
+/* Push button for canceling adding entries to the database */
 QPushButton#cancel {
     border: 2px groove black;
     border-radius: 4px;

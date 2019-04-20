@@ -11,7 +11,6 @@
 #include <QRadioButton>
 #include <QPushButton>
 #include <QFile>
-#include <QDebug>
 #include <QDir>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -20,13 +19,11 @@
 #include <QMessageBox>
 #include <QInputDialog>
 
-DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
+DatabaseMenu::DatabaseMenu(QWidget *parent)
+    : QWidget(parent)
 {
     // Initialize the database, enable foreign keys, and populate the database columns
-    QSqlError error = initDB();
-    if (error.type() != QSqlError::NoError) {
-        qDebug() << "Database error: " << error;
-    }
+    initDB();
     QSqlQuery enableQuery("PRAGMA foreign_keys = ON;");
     enableQuery.exec();
     setDBColumns();
@@ -48,7 +45,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     verticalHeader->setDefaultAlignment(Qt::AlignCenter);
 
     // Create radio buttons and add them to a layout
-    QFont radioFont("Futura", 15);
+    QFont radioFont("Futura", 20);
     printBtn = new QRadioButton("Print parameters");
     printBtn->setFont(radioFont);
     testBtn = new QRadioButton("Test results");
@@ -71,7 +68,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     radioGroup->addButton(allBtn, allID);
 
     QGroupBox* btnBox = new QGroupBox("Select data:");
-    btnBox->setFont(QFont("Futura", 25, QFont::Medium));
+    btnBox->setFont(QFont("Futura", 28, QFont::Medium));
     btnBox->setMinimumSize(250, 200);
     btnBox->setLayout(radioLayout);
 
@@ -130,7 +127,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent) : QWidget(parent)
     connect(verticalHeader, SIGNAL(sectionClicked(int)), this, SLOT(onRowIDClicked(int)));
 }
 
-QSqlError DatabaseMenu::initDB()
+void DatabaseMenu::initDB()
 {
     // Initialize the database object
     QString dbName(QDir::homePath() + "/Desktop/" + "polymer_hybrid.db"); // Temporary path for testing
@@ -139,85 +136,9 @@ QSqlError DatabaseMenu::initDB()
 
     // Check if the database exists and attempt to open it
     bool dbExists = QFile::exists(dbName);
-    if (!db.open())
-        return db.lastError();
+    db.open();
     if (!dbExists)
-        return createTables();
-    return db.lastError();
-}
-
-QSqlError DatabaseMenu::createTables()
-{
-    // Form and execute queries for creating tables
-    QSqlQuery query;
-    QString createTable;
-
-    // Prints table
-    createTable = "CREATE TABLE prints ("
-                    "id INTEGER PRIMARY KEY,"
-                    "description VARCHAR(100) NOT NULL,"
-                    "date CHAR(10) NOT NULL,"
-                    "spindle_speed REAL NOT NULL CHECK(spindle_speed > 0),"
-                    "feed_rate REAL NOT NULL CHECK(feed_rate > 0),"
-                    "layer_height REAL NOT NULL CHECK(layer_height > 0),"
-                    "rapids SMALLINT NOT NULL CHECK(rapids > 0),"
-                    "nozzle_temp REAL NOT NULL CHECK(nozzle_temp >= 0),"
-                    "bed_temp REAL NOT NULL CHECK(bed_temp >= 0 AND bed_temp <= 232),"
-                    "dryer_temp REAL CHECK(dryer_temp >= 0),"
-                    "ambient_temp REAL CHECK(ambient_temp >= 0),"
-                    "humidity TINYINT CHECK(humidity >= 0 AND humidity <= 100),"
-                    "surface_finish REAL CHECK(surface_finish >= 0),"
-                    "cycle_time CHAR(8),"
-                    "layer_time CHAR(8),"
-                    "experiment SMALLINT CHECK(experiment >= 0),"
-                    "dry_time CHAR(8),"
-                    "setup_time CHAR(8),"
-                    "shutdown_time CHAR(8),"
-                    "transition_time CHAR(8),"
-                    "video VARCHAR(255),"
-                    "notes VARCHAR(1000)"
-                  ");";
-    if (!query.exec(createTable))
-        return query.lastError();
-
-    // Tolerances table
-    createTable = "CREATE TABLE tolerances ("
-                    "id INTEGER PRIMARY KEY,"
-                    "print_id INTEGER UNIQUE,"
-                    "height REAL CHECK(height > 0),"
-                    "width REAL CHECK(width > 0),"
-                    "bead_width REAL CHECK(bead_width > 0),"
-                    "cross_image VARCHAR(255),"
-                    "FOREIGN KEY(print_id) REFERENCES prints(id) ON DELETE CASCADE"
-                  ");";
-    if (!query.exec(createTable))
-        return query.lastError();
-
-    // Tensile tests table
-    createTable = "CREATE TABLE tensiles ("
-                    "id INTEGER PRIMARY KEY,"
-                    "tolerance_id INTEGER,"
-                    "coupon TINYINT CHECK(coupon >= 1 AND coupon <= 12),"
-                    "ultimate REAL,"
-                    "percent_elongation REAL,"
-                    "yield REAL,"
-                    "modulus_elasticity REAL,"
-                    "cross_area REAL,"
-                    "FOREIGN KEY(tolerance_id) REFERENCES tolerances(id) ON DELETE CASCADE,"
-                    "CONSTRAINT ToleranceCoupon UNIQUE (tolerance_id,coupon)"
-                  ");";
-    if (!query.exec(createTable))
-        return query.lastError();
-
-    // Defects table
-    createTable = "CREATE TABLE defects ("
-                    "id INTEGER PRIMARY KEY,"
-                    "print_id INTEGER UNIQUE,"
-                    "description VARCHAR(1000) NOT NULL,"
-                    "FOREIGN KEY(print_id) REFERENCES prints(id) ON DELETE CASCADE"
-                  ");";
-    query.exec(createTable);
-    return query.lastError();
+        polyDB::createTables();
 }
 
 DatabaseMenu::~DatabaseMenu()
@@ -331,7 +252,9 @@ void DatabaseMenu::setDBColumns()
 
 void DatabaseMenu::addEntry()
 {
-    if (radioGroup->checkedId() == allID) {
+    // Get the data ID
+    const int dataID = radioGroup->checkedId();
+    if (dataID == allID) {
         // User must select a specific data set
         QMessageBox selectDataDialog(QMessageBox::Information, "Select a data category",
                              "Please select a specific set of data to add "
@@ -349,14 +272,13 @@ void DatabaseMenu::addEntry()
 
     // Get the data from the dialog and the particular table fields and create and execute
     // insertion queries against the database
-    const int dataID = radioGroup->checkedId();
     const QStringList& data = entryDialog->getData();
     const QVector<DatabaseColumn*>& columns = DBColumns[dataID];
     QStringList fields;
     fields.reserve(columns.size());
     foreach(const DatabaseColumn* column, columns)
         fields.append(column->field);
-    QSqlError insertError = polyDB::insertInto(dataID, fields, data);
+    QSqlError insertError = polyDB::insertEntry(dataID, fields, data);
     if (insertError.type() != QSqlError::NoError) {
         QMessageBox failedInsertionDialog(QMessageBox::Critical, "Database error",
                              "Failed to insert into the database!\n\n"
@@ -372,30 +294,15 @@ void DatabaseMenu::addEntry()
 
 void DatabaseMenu::modifyEntry()
 {
-    // Get the data ID and table to modify
+    // Get the data ID
     const int dataID = radioGroup->checkedId();
-    QString tableName;
-    switch(dataID) {
-    case printID:
-        tableName = "prints";
-        break;
-    case testID:
-        tableName = "tolerances";
-        break;
-    case defectID:
-        tableName = "defects";
-        break;
-    case allID:
-    {
+    if (dataID == allID) {
         // Can't modify while viewing all data
         QMessageBox selectDataDialog(QMessageBox::Information, "Select a data category",
                              "Please select a specific set of data to modify "
                              "an entry.", QMessageBox::Ok, this);
         selectDataDialog.exec();
     }
-    default:
-        return;
-    };
 
     // Get the existing rows/IDs to choose from
     QStringList IDList;
@@ -433,10 +340,10 @@ void DatabaseMenu::modifyEntry()
     fields.reserve(columns.size());
     foreach(const DatabaseColumn* column, columns)
         fields.append(column->field);
-    QSqlError updateError = polyDB::update(dataID, fields, data, ID);
+    QSqlError updateError = polyDB::updateEntry(dataID, fields, data, ID);
     if (updateError.type() != QSqlError::NoError) {
         QMessageBox failedUpdateDialog(QMessageBox::Critical, "Database error",
-                             "Failed to insert into the database!\n\n"
+                             "Failed to update the database!\n\n"
                              "Error reported:\n"
                              + updateError.text(), QMessageBox::Ok, this);
         failedUpdateDialog.exec();
@@ -503,10 +410,14 @@ void DatabaseMenu::deleteEntry()
             return;
     }
 
-    QString deleteStatement = "DELETE FROM ";
-    deleteStatement.append(tableName + " WHERE id=" + QString::number(ID) + ";");
-    QSqlQuery deleteQuery(deleteStatement);
-    deleteQuery.exec();
+    QSqlError deleteError = polyDB::deleteEntry(tableName, ID);
+    if (deleteError.type() != QSqlError::NoError) {
+        QMessageBox failedDeleteDialog(QMessageBox::Critical, "Database error",
+                             "Failed to delete from the database!\n\n"
+                             "Error reported:\n"
+                             + deleteError.text(), QMessageBox::Ok, this);
+        failedDeleteDialog.exec();
+    }
     setTable(dataID);
 }
 
