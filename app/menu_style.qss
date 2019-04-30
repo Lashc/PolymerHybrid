@@ -68,3 +68,10 @@ QHeaderView::section {
 QHeaderView::section:checked {
     background-color: rgb(201, 21, 58);
 }
+
+QTabBar::tab {
+    height: 50px;
+    width: 125px;
+    font-size: 16px;
+    font-weight: bold;
+}

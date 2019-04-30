@@ -14,7 +14,7 @@ DataEntry::DataEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget *parent,
 
     // Title widget
     title = new QLabel("Enter data:");
-    title->setFont(QFont("Futura", 28, QFont::Medium));
+    title->setFont(QFont("Futura", 26, QFont::DemiBold));
 
     // Action buttons for submitting and canceling database insertions
     QSize btnSize(100, 50);

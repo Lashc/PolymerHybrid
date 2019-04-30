@@ -45,7 +45,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent)
     verticalHeader->setDefaultAlignment(Qt::AlignCenter);
 
     // Create radio buttons and add them to a layout
-    QFont radioFont("Futura", 20);
+    QFont radioFont("Futura", 18);
     printBtn = new QRadioButton("Print parameters");
     printBtn->setFont(radioFont);
     testBtn = new QRadioButton("Test results");
@@ -68,7 +68,7 @@ DatabaseMenu::DatabaseMenu(QWidget *parent)
     radioGroup->addButton(allBtn, allID);
 
     QGroupBox* btnBox = new QGroupBox("Select data:");
-    btnBox->setFont(QFont("Futura", 28, QFont::Medium));
+    btnBox->setFont(QFont("Futura", 24, QFont::Medium));
     btnBox->setMinimumSize(250, 200);
     btnBox->setLayout(radioLayout);
 
@@ -164,8 +164,6 @@ void DatabaseMenu::setTable(int id)
                                  "(SELECT TE.ultimate FROM tensiles TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
                              "(SELECT GROUP_CONCAT(percent_elongation, \", \") FROM "
                                  "(SELECT TE.percent_elongation FROM tensiles TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
-                             "(SELECT GROUP_CONCAT(yield, \", \") FROM "
-                                 "(SELECT TE.yield FROM tensiles TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
                              "(SELECT GROUP_CONCAT(modulus_elasticity, \", \") FROM "
                                  "(SELECT TE.modulus_elasticity FROM tensiles TE WHERE tolerance_id = T.id ORDER BY TE.coupon)),"
                              "(SELECT GROUP_CONCAT(cross_area, \", \") FROM "
@@ -194,8 +192,6 @@ void DatabaseMenu::setTable(int id)
                         "(SELECT TE.ultimate FROM tensiles TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
                     "(SELECT GROUP_CONCAT(percent_elongation, \", \") FROM "
                         "(SELECT TE.percent_elongation FROM tensiles TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
-                    "(SELECT GROUP_CONCAT(yield, \", \") FROM "
-                        "(SELECT TE.yield FROM tensiles TE WHERE TE.tolerance_id = T.id ORDER BY TE.coupon)),"
                     "(SELECT GROUP_CONCAT(modulus_elasticity, \", \") FROM "
                         "(SELECT TE.modulus_elasticity FROM tensiles TE WHERE tolerance_id = T.id ORDER BY TE.coupon)),"
                     "(SELECT GROUP_CONCAT(cross_area, \", \") FROM "

@@ -73,5 +73,5 @@ DISTFILES += \
     defect_fields.rtf
 
 # Location to cross-compile GUI for Raspberry Pi
-target.path = /home/pi/
+target.path = /home/pi
 INSTALLS += target

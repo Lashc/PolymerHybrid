@@ -15,7 +15,7 @@ EntryView::EntryView(int dataID, int rowNum, QVector<QString> labels, const QSql
     setLayout(layout);
     layout->setSpacing(20);
     QLabel* header = new QLabel("Row " + QString::number(rowNum + 1) + " data");
-    QFont headerFont("Futura", 24, QFont::Medium);
+    QFont headerFont("Futura", 24, QFont::DemiBold);
     headerFont.setUnderline(true);
     header->setFont(headerFont);
     header->setStyleSheet("QLabel { color: rgb(201, 21, 58); }");
@@ -34,11 +34,11 @@ EntryView::EntryView(int dataID, int rowNum, QVector<QString> labels, const QSql
     layout->addLayout(gridLayout);
     gridLayout->setHorizontalSpacing(20);
     gridLayout->setVerticalSpacing(10);
-    QFont fieldLabelFont("Avenir", 18, QFont::Bold);
+    QFont fieldLabelFont("Avenir", 18, QFont::Medium);
     QString fieldStyle("border: 3px solid rgb(0, 135, 200);"
                        "border-radius: 4px; padding: 5px;"
                        "background-color: rgb(230, 230, 230);"
-                       "font: normal normal 16px \"Gotham\";");
+                       "font: 600 normal 16px \"Gotham\";");
     const int numLabels = labels.size();
     int i;
     for (i = 0; i < numLabels - 1; i++) {

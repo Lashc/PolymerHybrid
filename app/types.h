@@ -18,6 +18,6 @@ enum DataID {
 
 // Constants for loop logic
 const int NUM_COUPONS = 12;
-const int NUM_TENSILE_TESTS = 5;
+const int NUM_TENSILE_TESTS = 4;
 
 #endif // TYPES_H

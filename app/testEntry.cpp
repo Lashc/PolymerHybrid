@@ -60,6 +60,7 @@ TestEntry::TestEntry(const QVector<DatabaseColumn*>& DBColumns, bool isInsert, Q
             if (column->required)
                 input->setStyleSheet("border: 2px solid rgb(201, 21, 58);"
                                      "border-radius: 2px;");
+            input->setMinimumWidth(100);
             lineEdits.append(input);
             couponLayout->addWidget(input, j / 2, ((2 * j) + 1) % 4);
         }

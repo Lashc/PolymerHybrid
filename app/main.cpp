@@ -22,5 +22,6 @@ int main(int argc, char *argv[])
     #else
         gui.resize(1280, 800);
     #endif
+
     return a.exec();
 }

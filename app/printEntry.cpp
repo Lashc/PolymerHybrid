@@ -26,6 +26,7 @@ PrintEntry::PrintEntry(const QVector<DatabaseColumn*>& DBColumns, QWidget* paren
         if (column->required)
             input->setStyleSheet("border: 2px solid rgb(201, 21, 58);"
                                  "border-radius: 2px;");
+        input->setMinimumWidth(150);
         lineEdits.append(input);
         lineEditLayout->addWidget(input, i / 2, ((2 * i) + 1) % 4);
     }

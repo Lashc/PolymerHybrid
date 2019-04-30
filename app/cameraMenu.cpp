@@ -13,16 +13,16 @@ CameraMenu::CameraMenu(QWidget *parent)
 {
     // Header for menu
     cameraHeader = new QLabel("Camera Functions");
-    cameraHeader->setFont(QFont("Gotham", 50));
+    cameraHeader->setFont(QFont("Futura", 50));
     cameraHeader->setStyleSheet("QLabel { color: rgb(0, 35, 102); }");
     cameraHeader->setAlignment(Qt::AlignCenter);
 
     // Push buttons for interacting with a camera and temperature sensor as well as going back
     // to the main menu
     QSize pushBtnMinSize(150, 100);
-    QSize pushBtnMaxSize(600, 300);
+    QSize pushBtnMaxSize(400, 200);
     QSizePolicy pushBtnSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred, QSizePolicy::PushButton);
-    QFont pushBtnFont("Gotham", 20, QFont::Medium);
+    QFont pushBtnFont("Gotham", 30, QFont::Medium);
     viewBtn = new QPushButton("View camera");
     viewBtn->setMinimumSize(pushBtnMinSize);
     viewBtn->setMaximumSize(pushBtnMaxSize);
@@ -47,7 +47,7 @@ CameraMenu::CameraMenu(QWidget *parent)
     btnLayout->addWidget(viewBtn, 0, 0);
     btnLayout->addWidget(recordViewBtn, 0, 1);
     btnLayout->addWidget(backBtn, 1, 0, 1, 2);
-    btnLayout->setSpacing(30);
+    btnLayout->setVerticalSpacing(30);
     layout->addSpacing(50);
     layout->setMargin(10);
     layout->setSpacing(25);
