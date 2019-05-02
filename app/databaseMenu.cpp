@@ -298,6 +298,7 @@ void DatabaseMenu::modifyEntry()
                              "Please select a specific set of data to modify "
                              "an entry.", QMessageBox::Ok, this);
         selectDataDialog.exec();
+        return;
     }
 
     // Get the existing rows/IDs to choose from
