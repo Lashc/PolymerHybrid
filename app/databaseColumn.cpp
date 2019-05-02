@@ -44,7 +44,7 @@ DatabaseColumn::DatabaseColumn(const QString& tableName, const QString& fieldFil
     }
     else if (validatorType == "time") {
         // Verify time is in right format
-        validator = new QRegularExpressionValidator(QRegularExpression("^\\d\\d:\\d\\d:\\d\\d$"), this);
+        validator = new QRegularExpressionValidator(QRegularExpression("^\\d\\d:[0-5][0-9]:[0-5][0-9]$"), this);
     }
     else if (validatorType == "text") {
         // Limit the length of input according to validatorArgs, but

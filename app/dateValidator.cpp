@@ -16,7 +16,7 @@ QValidator::State DateValidator::validate(QString& input, int& pos) const
         return Intermediate;
     else {
         bool digitsOK = false;
-        if (input[0] == '-' || input[0] == '+')
+        if (input[0] == '-' || input[0] == '+' || input.contains(' '))
             return Invalid;
         int inputYear = -1;
         if (inputLength >= 1) {

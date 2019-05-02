@@ -79,8 +79,10 @@ void PrintEntry::validateData()
         }
     }
     const int maxNotesLength = columns.last()->validatorArgs[0].toInt();
-    if (notes->toPlainText().length() > maxNotesLength)
+    if (notes->toPlainText().length() > maxNotesLength) {
         valid.last() = false;
+        numErrors++;
+    }
     if (numErrors) {
         QString invalidInputs;
         for (int i = 0; i < numLineEdits + 1; i++)
